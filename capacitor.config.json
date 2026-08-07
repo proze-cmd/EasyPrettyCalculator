@@ -1,0 +1,8 @@
+{
+  "appId": "com.easypretty.kidcalc",
+  "appName": "Kid Calc",
+  "webDir": "www",
+  "server": {
+    "androidScheme": "https"
+  }
+}

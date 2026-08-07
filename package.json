@@ -1,0 +1,21 @@
+{
+  "name": "kid-calc",
+  "version": "0.1.0",
+  "private": true,
+  "description": "A cute, level-based calculator webapp for kids (up to 2nd-grade math). Zero-dependency static app, ready to wrap with Capacitor for iOS.",
+  "type": "module",
+  "scripts": {
+    "dev": "node scripts/serve.mjs",
+    "start": "node scripts/serve.mjs",
+    "build": "node scripts/build-www.mjs"
+  },
+  "keywords": [
+    "calculator",
+    "kids",
+    "education",
+    "math",
+    "capacitor"
+  ],
+  "author": "",
+  "license": "MIT"
+}

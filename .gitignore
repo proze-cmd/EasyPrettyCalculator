@@ -1,0 +1,16 @@
+# Dependencies
+node_modules/
+
+# Capacitor build output (generated from the static app by `npm run build`)
+www/
+
+# Native platform projects (added later by `npx cap add ios`)
+ios/
+android/
+
+# Editor / OS cruft
+.DS_Store
+Thumbs.db
+*.log
+.vscode/
+.idea/

@@ -6,6 +6,7 @@ import { state, currentLevel, applyTheme } from './state.js';
 import { initDisplay, renderDisplay } from './display.js';
 import { initKeypad, rebuildKeypad } from './calculator.js';
 import { initSettings } from './settings.js';
+import { initMaterials, syncTrigger } from './materials.js';
 
 function updateLevelBadge() {
   const lvl = currentLevel();
@@ -16,6 +17,7 @@ function updateLevelBadge() {
 
 function onLevelChange() {
   updateLevelBadge();
+  syncTrigger();
   rebuildKeypad();
   renderDisplay(false);
   updateTapHint();
@@ -29,7 +31,7 @@ function updateTapHint() {
   const text = document.querySelector('#tapHint .tap-hint__text');
   if (lvl.mode === 'count') {
     icons.textContent = '👆 ✨ 🐰';
-    text.textContent = 'Tap it to see it a new way';
+    text.textContent = 'Touch each one to count it';
   } else {
     icons.textContent = '🔢 👆 ✨';
     text.textContent = 'Build a problem, then tap it';
@@ -41,6 +43,7 @@ function boot() {
   initDisplay();
   initKeypad();
   initSettings({ onLevelChange });
+  initMaterials({ onPick: () => renderDisplay(true) });
 
   updateLevelBadge();
   updateTapHint();

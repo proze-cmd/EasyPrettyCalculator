@@ -24,6 +24,10 @@ export const state = {
   soundOn: saved.soundOn !== undefined ? !!saved.soundOn : true,
   speechOn: saved.speechOn !== undefined ? !!saved.speechOn : true,
   theme: saved.theme === 'calm' ? 'calm' : 'bright',
+  // Which objects the child is counting with, and whether they chose it
+  // themselves. A chosen material stays put; an unchosen one keeps surprising.
+  objectThemeIndex: saved.material ?? 0,
+  materialPinned: !!saved.materialPinned,
 
   // --- live calculator state (not persisted) ---
   // For "count" mode: just the currently shown value (or null = empty).
@@ -34,7 +38,6 @@ export const state = {
 
   // Which view the display is showing (advances on each tap).
   viewIndex: 0,
-  objectThemeIndex: 0,
   numeralStyleIndex: 0,
   shapeIndex: 0,
 
@@ -78,6 +81,17 @@ export function setSpeech(on) {
   persist();
 }
 
+export function setMaterial(index) {
+  state.objectThemeIndex = index;
+  state.materialPinned = true;
+  persist();
+}
+
+export function surpriseMaterial() {
+  state.materialPinned = false;
+  persist();
+}
+
 export function setTheme(name) {
   state.theme = name === 'calm' ? 'calm' : 'bright';
   applyTheme();
@@ -103,6 +117,8 @@ export function persist() {
         soundOn: state.soundOn,
         speechOn: state.speechOn,
         theme: state.theme,
+        material: state.objectThemeIndex,
+        materialPinned: state.materialPinned,
       })
     );
   } catch {

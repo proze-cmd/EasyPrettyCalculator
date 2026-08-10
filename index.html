@@ -17,7 +17,10 @@
   <div id="app" class="app">
     <header class="topbar">
       <h1 class="title"><span class="title-emoji" aria-hidden="true">🧮</span> Kid Calc</h1>
-      <button id="settingsBtn" class="icon-btn" aria-label="Open settings" title="Settings">⚙️</button>
+      <div class="topbar__tools">
+        <button id="materialsBtn" class="icon-btn" aria-label="Choose what to count with">🐶</button>
+        <button id="settingsBtn" class="icon-btn" aria-label="Open settings" title="Settings">⚙️</button>
+      </div>
     </header>
 
     <button id="levelBadge" class="level-badge" aria-label="Current level, tap to change">
@@ -33,6 +36,8 @@
         tabindex="0"
         aria-label="Number display. Tap to see it a fun new way."
       ></div>
+
+      <div id="journey" class="journey is-hidden" aria-label="Ways to see this number"></div>
 
       <p id="tapHint" class="tap-hint">
         <span class="tap-hint__icons" aria-hidden="true">👆 ✨ 🐰</span>
@@ -106,6 +111,19 @@
       </section>
 
       <p class="sheet__footnote">Made with 💗 for little mathematicians.</p>
+    </div>
+  </div>
+
+  <!-- Choose what to count with -->
+  <div id="materialsOverlay" class="overlay hidden" aria-hidden="true">
+    <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="materialsTitle">
+      <div class="sheet__handle" aria-hidden="true"></div>
+      <div class="sheet__head">
+        <h2 id="materialsTitle" class="sheet__title">What shall we count?</h2>
+        <button id="materialsClose" class="icon-btn" aria-label="Close">✖️</button>
+      </div>
+      <div id="materialsGrid" class="materials"></div>
+      <button id="materialsSurprise" class="surprise" type="button">🎲 Surprise me every time</button>
     </div>
   </div>
 

@@ -19,9 +19,45 @@ export function initKeypad() {
   window.addEventListener('keydown', handlePhysicalKey);
 }
 
-// Longest operand allowed, based on the level's biggest number.
-function maxLen() {
-  return String(currentLevel().maxValue).length;
+/**
+ * The largest number that may be entered *right now*.
+ *
+ * For the first operand that's simply the level's ceiling. For the second it's
+ * whatever keeps the answer inside the level too — so "Adding to 10" can't
+ * reach 198, and, importantly, you can never take away more than you have:
+ * subtraction is bounded by the first number, so the answer never goes
+ * negative. The boundary is taught by the keypad rather than enforced by a
+ * refusal after the fact.
+ */
+function maxAllowed() {
+  const level = currentLevel();
+  const c = state.calc;
+  if (c.phase !== 'b' || !c.op) return level.maxValue;
+
+  const a = Number(c.a || 0);
+  switch (c.op) {
+    case '+':
+      return Math.max(0, level.maxValue - a);
+    case '−':
+      return a; // can't take away more than there is
+    case '×':
+      return a > 0 ? Math.floor(level.maxValue / a) : level.maxValue;
+    default:
+      return level.maxValue;
+  }
+}
+
+/** What the operand would become if this digit were added. */
+function candidate(current, digit) {
+  return Number(normalizeEntry(String(current) + String(digit)));
+}
+
+/** Would pressing this digit take us outside the level? */
+function digitBlocked(digit) {
+  const c = state.calc;
+  if (c.phase === 'done') return false; // a new problem is about to start
+  const current = c.phase === 'a' ? c.a : c.b;
+  return candidate(current, digit) > maxAllowed();
 }
 
 // -------------------------------------------------------------------------
@@ -37,6 +73,7 @@ export function rebuildKeypad() {
     buildCountKeypad(level);
   } else {
     buildCalcKeypad(level);
+    refreshKeys();
   }
 }
 
@@ -152,25 +189,54 @@ function pressDigit(d, btn) {
   markInteracted();
   const c = state.calc;
 
+  // Out of range: say why, kindly, instead of silently doing nothing.
+  if (c.phase !== 'done' && digitBlocked(d)) {
+    refuse(btn, d);
+    return;
+  }
+
   if (c.phase === 'done') {
     // Typing after an answer starts a brand-new problem.
     state.calc = freshCalc();
   }
   const cc = state.calc;
 
-  if (cc.phase === 'a') {
-    if (cc.a.length < maxLen()) cc.a += String(d);
-    cc.a = normalizeEntry(cc.a);
-  } else if (cc.phase === 'b') {
-    if (cc.b.length < maxLen()) cc.b += String(d);
-    cc.b = normalizeEntry(cc.b);
-  }
+  if (cc.phase === 'a') cc.a = normalizeEntry(cc.a + String(d));
+  else if (cc.phase === 'b') cc.b = normalizeEntry(cc.b + String(d));
 
   resetView();
   renderDisplay(true);
   if (btn) pressFeedback(btn);
   playPop();
   say(cc.phase === 'a' ? cc.a : cc.b);
+  refreshKeys();
+}
+
+/** A soft "not that one" — a wobble and a reason, never a dead button. */
+function refuse(btn, digit) {
+  const c = state.calc;
+  if (btn) {
+    btn.classList.remove('btn--refused');
+    void btn.offsetWidth;
+    btn.classList.add('btn--refused');
+    btn.addEventListener('animationend', () => btn.classList.remove('btn--refused'), { once: true });
+  }
+  playClear();
+  if (c.op === '−' && c.phase === 'b') say(`We only have ${c.a}`);
+  else say('That one is too big for this level');
+}
+
+/**
+ * Dim the digits that would leave the level, so the limit is visible before
+ * it's hit rather than discovered by bumping into it.
+ */
+export function refreshKeys() {
+  if (currentLevel().mode !== 'calc' || !keypadEl) return;
+  keypadEl.querySelectorAll('.btn--num').forEach((b) => {
+    const d = Number(b.textContent);
+    if (Number.isNaN(d)) return;
+    b.classList.toggle('btn--muted', digitBlocked(d));
+  });
 }
 
 function normalizeEntry(str) {
@@ -205,6 +271,7 @@ function pressOp(op, btn) {
   if (btn) pressFeedback(btn);
   playTap();
   say(opWord(op));
+  refreshKeys();
 }
 
 function pressEquals(btn) {
@@ -230,6 +297,7 @@ function pressEquals(btn) {
   confetti(44);
   sparkle(displayEl, 12);
   say(equationPhrase(Number(c.a), c.op, Number(c.b), c.result));
+  refreshKeys();
 }
 
 function compute(a, op, b) {
@@ -262,6 +330,7 @@ function clearAll(btn) {
   if (btn) pressFeedback(btn);
   playClear();
   cancelSpeech();
+  refreshKeys();
 }
 
 function backspace(btn) {
@@ -286,6 +355,7 @@ function backspace(btn) {
   if (btn) pressFeedback(btn);
   playClear();
   cancelSpeech();
+  refreshKeys();
 }
 
 // -------------------------------------------------------------------------

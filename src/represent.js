@@ -64,9 +64,15 @@ export function renderQuantity(n, opts = {}) {
 
   const value = Math.round(n);
 
-  // Zero, negatives and anything unreasonably large fall back to the numeral.
-  if (!Number.isFinite(value) || value <= 0) {
-    return renderNumeral(value, { size, numeralIndex, negative: value < 0 });
+  if (!Number.isFinite(value) || value < 0) {
+    return renderNumeral(value, { size, numeralIndex, negative: true });
+  }
+  // Zero is a quantity too, and a startling one at this age. An empty frame
+  // says "none left" in a way the digit on its own never does.
+  if (value === 0) {
+    return mode === 'numeral'
+      ? renderNumeral(0, { size, numeralIndex })
+      : renderEmptyFrame(size);
   }
   if (value > MAX_ITEMS && mode !== 'numeral') {
     const wrap = shell('rep--numeral', size);
@@ -236,6 +242,106 @@ function renderTenFrames(n, size) {
     wrap.appendChild(frame);
   }
   return wrap;
+}
+
+function renderEmptyFrame(size) {
+  const wrap = shell('rep--tenframe rep--zero', size);
+  const frame = document.createElement('div');
+  frame.className = 'tenframe';
+  for (let c = 0; c < 10; c++) {
+    const cell = document.createElement('span');
+    cell.className = 'tf-cell';
+    frame.appendChild(cell);
+  }
+  wrap.appendChild(frame);
+  const label = document.createElement('div');
+  label.className = 'zero-note';
+  label.textContent = 'none left';
+  wrap.appendChild(label);
+  return wrap;
+}
+
+// ---------------------------------------------------------------------------
+// Make a ten — the bridging strategy
+// ---------------------------------------------------------------------------
+
+/**
+ * Shows how an addition crosses ten: the first number takes just enough from
+ * the second to fill a ten, and whatever is left over sits beside it. Seeing
+ * 8 + 5 become 10 + 3 is the step that turns counting on from a total into
+ * knowing it.
+ */
+export function renderMakeTen(a, b, need, rest) {
+  const palette = partColors();
+  const A = palette[0].solid;
+  const B = palette[1].solid;
+
+  const wrap = document.createElement('div');
+  wrap.className = 'maketen';
+
+  const lead = document.createElement('div');
+  lead.className = 'maketen__lead';
+  lead.append(
+    strong(a, A), text(' needs '), strong(need, B), text(' more to make '), strong(10, null)
+  );
+  wrap.appendChild(lead);
+
+  const frames = document.createElement('div');
+  frames.className = 'maketen__frames';
+
+  // First frame: the original number, then just enough borrowed to fill it.
+  const f1 = document.createElement('div');
+  f1.className = 'tenframe';
+  for (let i = 0; i < 10; i++) {
+    const cell = document.createElement('span');
+    cell.className = 'tf-cell';
+    if (i < a) {
+      cell.classList.add('tf-filled', 'pop-in');
+      cell.style.background = A;
+      cell.style.borderColor = A;
+    } else if (i < a + need) {
+      cell.classList.add('tf-filled', 'tf-moved', 'pop-in');
+      cell.style.background = B;
+      cell.style.borderColor = B;
+      cell.style.animationDelay = 180 + (i - a) * 90 + 'ms';
+    }
+    f1.appendChild(cell);
+  }
+  frames.appendChild(f1);
+
+  // Second frame: what was left over.
+  const f2 = document.createElement('div');
+  f2.className = 'tenframe';
+  for (let i = 0; i < 10; i++) {
+    const cell = document.createElement('span');
+    cell.className = 'tf-cell';
+    if (i < rest) {
+      cell.classList.add('tf-filled', 'pop-in');
+      cell.style.background = B;
+      cell.style.borderColor = B;
+      cell.style.animationDelay = 420 + i * 70 + 'ms';
+    }
+    f2.appendChild(cell);
+  }
+  frames.appendChild(f2);
+  wrap.appendChild(frames);
+
+  const sum = document.createElement('div');
+  sum.className = 'maketen__sum';
+  sum.append(strong(10, null), text(' + '), strong(rest, B), text(' = '), strong(10 + rest, null));
+  wrap.appendChild(sum);
+
+  return wrap;
+}
+
+function strong(n, color) {
+  const el = document.createElement('b');
+  el.textContent = String(n);
+  if (color) el.style.color = color;
+  return el;
+}
+function text(t) {
+  return document.createTextNode(t);
 }
 
 // ---------------------------------------------------------------------------

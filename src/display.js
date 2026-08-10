@@ -1,5 +1,6 @@
 // display.js
-// Draws the big display panel and handles "tap to see it another way".
+// Draws the big display panel, handles "tap to see it another way", and lets a
+// child count the things on screen by touching them one at a time.
 //
 // The tap order is a deliberate journey rather than a random shuffle. In the
 // counting levels it starts by pairing the numeral with a structured quantity
@@ -10,7 +11,13 @@
 
 import { state, currentLevel } from './state.js';
 import { OBJECT_THEMES } from './config.js';
-import { renderQuantity, renderNumeral, renderWays, partColors } from './represent.js';
+import {
+  renderQuantity,
+  renderNumeral,
+  renderWays,
+  renderMakeTen,
+  partColors,
+} from './represent.js';
 import { renderBond } from './bond.js';
 import {
   groupsFor,
@@ -18,21 +25,71 @@ import {
   groupsForProduct,
   describeGroups,
 } from './arrange.js';
-import { pop, sparkle } from './animate.js';
-import { playSwap } from './sound.js';
-import { say } from './speech.js';
+import { pop, sparkle, confetti } from './animate.js';
+import { playSwap, playPop } from './sound.js';
+import { say, saySequence } from './speech.js';
 
 let displayEl;
+let journeyEl;
+
+// How many things the child has touched in the current picture.
+let counted = 0;
+
+const COUNTABLE = '.obj, .dot, .tf-filled, .bead';
 
 export function initDisplay() {
   displayEl = document.getElementById('display');
-  displayEl.addEventListener('click', cycleView);
+  journeyEl = document.getElementById('journey');
+  displayEl.addEventListener('click', onDisplayClick);
   displayEl.addEventListener('keydown', (e) => {
     if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault();
       cycleView();
     }
   });
+}
+
+// ---------------------------------------------------------------------------
+// Touching things to count them
+// ---------------------------------------------------------------------------
+
+/**
+ * Children learn to count by touching each thing as they say its number —
+ * one-to-one correspondence. Touching an object counts it; touching the space
+ * around them moves on to the next way of seeing the number.
+ */
+function onDisplayClick(e) {
+  const item = e.target.closest(COUNTABLE);
+  if (item) {
+    if (!item.classList.contains('counted')) countOne(item);
+    return;
+  }
+  cycleView();
+}
+
+function countables() {
+  return displayEl.querySelectorAll(COUNTABLE);
+}
+
+function countOne(item) {
+  item.classList.add('counted');
+  counted += 1;
+  playPop();
+
+  const total = countables().length;
+  if (counted >= total && total > 0) {
+    saySequence([String(counted), `${total} altogether!`]);
+    sparkle(displayEl, 10);
+    confetti(18);
+    displayEl.classList.add('all-counted');
+  } else {
+    say(String(counted));
+  }
+}
+
+function resetCounting() {
+  counted = 0;
+  if (displayEl) displayEl.classList.remove('all-counted');
 }
 
 // ---------------------------------------------------------------------------
@@ -55,6 +112,15 @@ function bondNumbers() {
   return null;
 }
 
+/** Only worth showing when the sum actually crosses ten. */
+function makeTenNumbers() {
+  const { c, a, b, result } = calcParts();
+  if (c.op !== '+' || result === null || a === null || b === null) return null;
+  if (a <= 0 || b <= 0 || a >= 10 || b >= 10) return null;
+  if (result <= 10 || result > 20) return null;
+  return { a, b, need: 10 - a, rest: result - 10 };
+}
+
 function viewCycle() {
   const level = currentLevel();
 
@@ -72,7 +138,9 @@ function viewCycle() {
     return views;
   }
 
-  const views = [{ mode: 'numeral' }, { mode: 'objects' }, { mode: 'dots' }, { mode: 'rods' }];
+  const views = [{ mode: 'numeral' }, { mode: 'objects' }];
+  if (makeTenNumbers()) views.push({ mode: 'maketen' });
+  views.push({ mode: 'dots' }, { mode: 'rods' });
   if (bondNumbers()) views.push({ mode: 'bond' });
   views.push({ mode: 'tenframe' });
   return views;
@@ -96,17 +164,22 @@ function hasContent() {
 
 function cycleView() {
   if (!hasContent()) return;
-  const cycle = viewCycle();
-  state.viewIndex = (state.viewIndex + 1) % cycle.length;
+  goToView((state.viewIndex + 1) % viewCycle().length);
+}
 
-  // Coming back around to the start earns a fresh set of objects, so the same
-  // number can be five puppies one moment and five acorns the next.
-  if (state.viewIndex === 0) {
+function goToView(index) {
+  const cycle = viewCycle();
+  const next = ((index % cycle.length) + cycle.length) % cycle.length;
+
+  // Coming back around to the start earns a fresh set of objects — unless the
+  // child has chosen their own, in which case it stays as they left it.
+  if (next === 0 && !state.materialPinned) {
     state.objectThemeIndex = (state.objectThemeIndex + 1) % OBJECT_THEMES.length;
     state.shapeIndex = state.shapeIndex + 1;
     state.numeralStyleIndex = state.numeralStyleIndex + 1;
   }
 
+  state.viewIndex = next;
   playSwap();
   renderDisplay(true);
   sparkle(displayEl, 6);
@@ -131,10 +204,38 @@ function narrateView() {
     return;
   }
 
+  if (view.mode === 'maketen') {
+    const m = makeTenNumbers();
+    if (m) say(`${m.a} needs ${m.need} more to make 10. Then ${m.rest} more makes ${10 + m.rest}.`);
+    return;
+  }
   const bond = bondNumbers();
   if (view.mode === 'bond' && bond) {
     say(`${bond.whole} is ${bond.partA} and ${bond.partB}`);
   }
+}
+
+/** A dot per way of seeing this number, so the journey has a visible map. */
+function renderJourney() {
+  if (!journeyEl) return;
+  journeyEl.innerHTML = '';
+  const cycle = viewCycle();
+  if (!hasContent() || cycle.length < 2) {
+    journeyEl.classList.add('is-hidden');
+    return;
+  }
+  journeyEl.classList.remove('is-hidden');
+
+  const here = state.viewIndex % cycle.length;
+  cycle.forEach((_, i) => {
+    const dot = document.createElement('button');
+    dot.type = 'button';
+    dot.className = 'journey__dot' + (i === here ? ' on' : '');
+    dot.setAttribute('aria-label', `Way ${i + 1} of ${cycle.length}`);
+    dot.setAttribute('aria-current', i === here ? 'true' : 'false');
+    dot.addEventListener('click', () => goToView(i));
+    journeyEl.appendChild(dot);
+  });
 }
 
 // ---------------------------------------------------------------------------
@@ -145,6 +246,7 @@ export function renderDisplay(animate = false) {
   const level = currentLevel();
   displayEl.innerHTML = '';
   displayEl.classList.remove('is-empty');
+  resetCounting();
 
   if (level.mode === 'count') {
     renderCountMode();
@@ -153,6 +255,7 @@ export function renderDisplay(animate = false) {
   }
 
   displayEl.classList.toggle('tappable', hasContent());
+  renderJourney();
 
   if (animate) {
     const content = displayEl.firstElementChild;
@@ -223,6 +326,14 @@ function renderCalcMode() {
   }
 
   const view = currentView();
+
+  if (view.mode === 'maketen') {
+    const m = makeTenNumbers();
+    if (m) {
+      displayEl.appendChild(renderMakeTen(m.a, m.b, m.need, m.rest));
+      return;
+    }
+  }
 
   if (view.mode === 'bond') {
     const bond = bondNumbers();
@@ -311,7 +422,7 @@ function row(sign, value, view, opts = {}, isResult = false) {
     blank.textContent = isResult ? '?' : '';
     valEl.appendChild(blank);
   } else {
-    const mode = view.mode === 'bond' ? 'numeral' : view.mode;
+    const mode = view.mode === 'bond' || view.mode === 'maketen' ? 'numeral' : view.mode;
     const quantity = renderQuantity(value, {
       mode,
       size: 'small',

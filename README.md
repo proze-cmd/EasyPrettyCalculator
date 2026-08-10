@@ -18,7 +18,9 @@ with Capacitor** later.
   count one-by-one. See [How numbers are drawn](#-how-numbers-are-drawn).
 - **Tap the display to transform it** — each tap shows the same amount a new way:
   the numeral paired with its quantity, different ways to split it apart
-  (9 as 5+4, as 3+3+3, as 6+3), colored shapes, and ten-frames.
+  (9 as 5+4, as 3+3+3, as 6+3), colored shapes, bead bars, and ten-frames.
+  A row of dots under the display shows how many ways there are, and jumps
+  straight to any of them.
 - **Numbers pop in** with bouncy animations, sparkles, and confetti on answers.
 - **Gentle sounds** (Web Audio, no files) and **spoken narration** (Web Speech,
   no files) — it counts aloud "one, two, three…" and reads equations out loud.
@@ -69,6 +71,18 @@ Other pedagogy baked in:
   two-colour strips; as one part grows the other shrinks, in a staircase.
 - **Two colour worlds.** A **Bright** candy palette and a **Calm** one in muted
   watercolour tones, for children who find the bright version busy.
+- **Touch each thing to count it.** Tapping an object rings it and says its
+  number — one-to-one correspondence, the way children actually learn to count.
+  Finishing the set is celebrated. Tapping the space around them moves on to
+  the next way of seeing the number.
+- **Make a ten.** When an addition crosses ten, `8 + 5` shows the 8 borrowing
+  just 2 to fill a ten-frame, leaving 3 — so the child sees `10 + 3`.
+- **Every level holds its range.** Digits that would take you outside the level
+  dim, and pressing one wobbles and says why. You can never take away more than
+  you have, so the answer never goes negative.
+- **Zero has a picture** — an empty ten-frame, spoken as "none left".
+- **Pick your own things to count.** Puppies, shells, acorns, rockets — chosen
+  materials stay put, or "surprise me" keeps them changing.
 
 ## 📚 Levels
 
@@ -104,6 +118,7 @@ styles.css          # all styling, animations, and the bright/calm themes
 src/
   config.js         # LEVELS, emoji themes, palettes  ← tweak content here
   arrange.js        # the grouping engine: how a number splits into groups (pure logic)
+  materials.js      # choosing what to count with
   state.js          # central state + localStorage persistence
   sound.js          # Web Audio blips (no audio files)
   speech.js         # spoken narration via the Web Speech API (no audio files)

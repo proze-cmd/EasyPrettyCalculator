@@ -104,6 +104,42 @@ body.ready {
   transform: scale(0.9);
 }
 
+.topbar__tools { display: flex; gap: 8px; }
+
+/* --- Journey dots -------------------------------------------------------
+   The display can hold many ways of seeing the same number. These give that
+   journey a visible length, a place in it, and a way back to any of them.
+   ------------------------------------------------------------------------ */
+
+.journey {
+  flex: 0 0 auto;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 7px;
+  min-height: 16px;
+}
+.journey.is-hidden { visibility: hidden; }
+.journey__dot {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 9px;
+  height: 9px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: rgba(90, 60, 90, 0.2);
+  cursor: pointer;
+  flex: 0 0 auto;
+  transition: transform 0.15s ease, background 0.15s ease;
+}
+.journey__dot:hover { transform: scale(1.25); }
+.journey__dot.on {
+  background: #ff5fa2;
+  transform: scale(1.45);
+}
+body.theme-calm .journey__dot.on { background: #c2705a; }
+
 /* --- Level badge -------------------------------------------------------- */
 
 .level-badge {
@@ -450,6 +486,65 @@ body.has-interacted .tap-hint {
   color: var(--ink-soft);
 }
 
+/* Counted by touch — one-to-one correspondence. A thing you have already
+   counted stays marked, so you can see where you got to. */
+.obj,
+.dot,
+.bead,
+.tf-filled {
+  cursor: pointer;
+  transition: transform 0.14s ease, filter 0.14s ease;
+}
+.counted {
+  position: relative;
+  transform: scale(0.88);
+  filter: saturate(0.55) brightness(1.06);
+}
+.obj.counted::after,
+.dot.counted::after {
+  content: '';
+  position: absolute;
+  inset: -12%;
+  border: 2.5px solid #34c759;
+  border-radius: 50%;
+  pointer-events: none;
+}
+.bead.counted,
+.tf-filled.counted {
+  box-shadow: inset 0 0 0 3px #34c759;
+}
+.display.all-counted { box-shadow: var(--shadow-soft), inset 0 0 0 4px #d6f5de; }
+
+/* Zero */
+.rep--zero { flex-direction: column; gap: 8px; }
+.zero-note {
+  font-weight: 800;
+  color: var(--ink-soft);
+  font-size: clamp(15px, 4vw, 19px);
+}
+
+/* --- Make a ten --------------------------------------------------------- */
+
+.maketen {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  --item: clamp(20px, 6.5vw, 34px);
+}
+.maketen__lead,
+.maketen__sum {
+  font-weight: 800;
+  color: var(--ink-soft);
+  font-size: clamp(15px, 4.2vw, 20px);
+  text-align: center;
+}
+.maketen__sum { font-size: clamp(19px, 5.4vw, 27px); color: var(--ink); }
+.maketen__frames { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
+.maketen .tenframe { border-color: #c9d4f5; }
+/* the beads that moved across to complete the ten */
+.tf-moved { box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.75); }
+
 /* --- Equation (stacked math) ------------------------------------------- */
 
 .equation {
@@ -562,6 +657,20 @@ body.has-interacted .tap-hint {
 }
 .btn.pressed {
   animation: squish 0.25s ease;
+}
+/* Out of range for this level — still pressable, but visibly not the way on. */
+.btn--muted {
+  opacity: 0.34;
+  filter: saturate(0.4);
+}
+.btn--refused {
+  animation: wobble 0.4s ease;
+}
+@keyframes wobble {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-6px) rotate(-2deg); }
+  45% { transform: translateX(5px) rotate(2deg); }
+  70% { transform: translateX(-3px) rotate(-1deg); }
 }
 
 .btn--wide {
@@ -790,6 +899,56 @@ body.has-interacted .tap-hint {
   color: #ff4d94;
   background: #fff5fa;
 }
+
+.materials {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(76px, 1fr));
+  gap: 9px;
+  max-height: 46vh;
+  overflow-y: auto;
+  padding: 4px 2px;
+}
+.material {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 10px 4px 8px;
+  border: 3px solid #ffe0ef;
+  border-radius: 16px;
+  background: #fff;
+  cursor: pointer;
+  font-family: inherit;
+  transition: transform 0.1s ease, border-color 0.15s ease;
+}
+.material:active { transform: scale(0.94); }
+.material.on { border-color: #ff6b9d; background: #fff5fa; }
+.material__emoji { font-size: 30px; line-height: 1; }
+.material__name {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--ink-soft);
+  text-align: center;
+}
+body.theme-calm .material { border-color: #ece0cf; }
+body.theme-calm .material.on { border-color: #c9a37f; background: #fdf6ec; }
+
+.surprise {
+  margin-top: 12px;
+  width: 100%;
+  padding: 13px;
+  border: 3px dashed #ffd0e6;
+  border-radius: 16px;
+  background: #fff;
+  font-family: inherit;
+  font-weight: 800;
+  font-size: 15px;
+  color: var(--ink-soft);
+  cursor: pointer;
+}
+.surprise.on { border-style: solid; border-color: #ff6b9d; color: #ff4d94; background: #fff5fa; }
+body.theme-calm .surprise { border-color: #ece0cf; }
+body.theme-calm .surprise.on { border-color: #c9a37f; color: #a5714f; background: #fdf6ec; }
 
 .sheet__footnote {
   text-align: center;

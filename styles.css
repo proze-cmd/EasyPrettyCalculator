@@ -633,6 +633,11 @@ body.has-interacted .tap-hint {
   border-radius: 28px 28px 0 0;
   padding: 10px 22px max(22px, env(safe-area-inset-bottom));
   box-shadow: 0 -10px 30px rgba(120, 70, 120, 0.25);
+  /* On a short screen (a phone held sideways) the sheet is taller than the
+     window. Without this it overflows upward and takes the close button with
+     it, leaving no way back out. */
+  max-height: 92dvh;
+  overflow-y: auto;
   transform: translateY(0);
   transition: transform 0.25s cubic-bezier(0.2, 0.9, 0.3, 1.2);
 }

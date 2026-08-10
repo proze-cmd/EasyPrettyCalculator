@@ -57,6 +57,7 @@ export function renderQuantity(n, opts = {}) {
     shapeIndex = 0,
     numeralIndex = 0,
     groupColors = null,
+    uniformColor = null,
     removedGroups = null,
     forceChip = false,
   } = opts;
@@ -91,6 +92,7 @@ export function renderQuantity(n, opts = {}) {
         themeIndex,
         shapeIndex,
         groupColors,
+        uniformColor,
         removedGroups,
         forceChip,
       });
@@ -102,7 +104,7 @@ export function renderQuantity(n, opts = {}) {
 // ---------------------------------------------------------------------------
 
 function renderGrouped(n, o) {
-  const { mode, groups, size, themeIndex, shapeIndex, groupColors, removedGroups, forceChip } = o;
+  const { mode, groups, size, themeIndex, shapeIndex, groupColors, uniformColor, removedGroups, forceChip } = o;
   const wrap = shell('rep--grouped', size);
 
   applyDensity(wrap, n);
@@ -118,7 +120,8 @@ function renderGrouped(n, o) {
   let drawn = 0; // running index, used to stagger the pop-in animation
   list.forEach((count, gi) => {
     const palette = partColors();
-    const color = (groupColors && groupColors[gi]) || palette[gi % palette.length];
+    const color =
+      (groupColors && groupColors[gi]) || uniformColor || palette[gi % palette.length];
     const grp = document.createElement('div');
     grp.className = 'grp';
     if (chip) {

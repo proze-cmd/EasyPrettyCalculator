@@ -214,11 +214,6 @@ function renderCountMode() {
 
 // ---- calculating levels ----
 
-/** Every group in this quantity painted the same colour. */
-function mono(color, count) {
-  return Array.from({ length: count }, () => color);
-}
-
 function renderCalcMode() {
   const { c, a, b, result } = calcParts();
 
@@ -254,7 +249,8 @@ function renderCalcMode() {
       // In subtraction the child should see the part that leaves: the top row
       // is split into "what stays" and "what goes", with the latter faded.
       groups: subtracting ? [result, b].filter((x) => x > 0) : null,
-      groupColors: subtracting ? [colorA, colorB] : mono(colorA, 8),
+      groupColors: subtracting ? [colorA, colorB] : null,
+      uniformColor: subtracting ? null : colorA,
       removedGroups: subtracting && result > 0 ? [1] : subtracting ? [0] : null,
     })
   );
@@ -262,7 +258,7 @@ function renderCalcMode() {
   if (c.op) {
     // Row 2 — the operator and the second number.
     const showB = c.b === '' && c.phase === 'b' ? null : b;
-    table.appendChild(row(c.op, showB, view, { groupColors: mono(colorB, 8) }));
+    table.appendChild(row(c.op, showB, view, { uniformColor: colorB }));
 
     const line = document.createElement('div');
     line.className = 'equation__line';
@@ -294,7 +290,7 @@ function resultOptions(c, a, b, result) {
     const groups = groupsForProduct(a, b);
     return { groups, groupColors: groups.map((_, i) => palette[i % palette.length]) };
   }
-  return { groupColors: mono(colorA, 8) };
+  return { uniformColor: colorA };
 }
 
 function row(sign, value, view, opts = {}, isResult = false) {
@@ -322,6 +318,7 @@ function row(sign, value, view, opts = {}, isResult = false) {
       decompIndex: 0,
       groups: opts.groups || null,
       groupColors: opts.groupColors || null,
+      uniformColor: opts.uniformColor || null,
       removedGroups: opts.removedGroups || null,
       // Give each row of a visual equation its own coloured plate so the parts
       // stay traceable from the numbers above into the answer below.

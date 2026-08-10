@@ -526,6 +526,22 @@ function renderCalcMode() {
     }
   }
 
+  // With two-digit numbers, drawing all three rows as ten-frames is a wall
+  // roughly four screens tall. The answer on its own says the useful thing —
+  // that forty-five is four tens and five.
+  if (view.mode === 'tenframe' && result !== null && Math.max(a || 0, b || 0, result) > MAX_DRAWN) {
+    const only = document.createElement('div');
+    only.className = 'answer-only';
+    only.appendChild(renderQuantity(result, { mode: 'tenframe', size: 'big' }));
+    const label = document.createElement('div');
+    label.className = 'answer-only__num';
+    label.textContent = String(result);
+    label.style.color = resultColor();
+    only.appendChild(label);
+    displayEl.appendChild(only);
+    return;
+  }
+
   const visual = view.mode === 'objects' || view.mode === 'tenframe';
   const table = document.createElement('div');
   table.className = 'equation ' + (visual ? 'equation--visual' : 'equation--numeral');

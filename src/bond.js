@@ -1,43 +1,62 @@
 // bond.js
-// A "number bond" — the part-part-whole diagram used throughout Singapore
-// Math. The whole sits on top, joined by two branches to the parts that make
-// it. It's the clearest way to show that 9 *is* 5 and 4, and that the same
-// three numbers describe both 5 + 4 = 9 and 9 − 4 = 5.
+// A "number bond" — the part-part-whole picture used throughout Singapore Math.
+//
+// The version of this diagram you see in a textbook is three circles with
+// numerals in them, joined by two lines. That works for a reader who already
+// knows what nine means. A child who doesn't get it sees three circles.
+//
+// So the circles hold the actual things. The nine dots on top are visibly the
+// five dots and the four dots below, and the numeral sits underneath each one
+// where it can be read off rather than relied upon.
 
 import { partColors, resultColor } from './represent.js';
-import { state } from './state.js';
+import { MAX_DRAWN } from './config.js';
 
-const SVG_NS = 'http://www.w3.org/2000/svg';
-
-function node(name, attrs) {
-  const el = document.createElementNS(SVG_NS, name);
-  Object.entries(attrs).forEach(([k, v]) => el.setAttribute(k, String(v)));
-  return el;
+/** Dots inside a bond circle, in short rows so they read as a group. */
+function bondDots(n, color) {
+  const wrap = document.createElement('div');
+  wrap.className = 'bond__dots';
+  // Sized so the dots land in tidy rows inside the circle — three to a row for
+  // the single digits, which puts nine up as three rows of three rather than a
+  // clump nobody can read at a glance.
+  wrap.style.setProperty('--bdot', n <= 4 ? '38%' : n <= 9 ? '26%' : n <= 12 ? '20%' : '16%');
+  for (let i = 0; i < n; i++) {
+    const dot = document.createElement('span');
+    dot.className = 'bond__dot pop-in';
+    dot.style.background = color;
+    dot.style.animationDelay = Math.min(i * 45, 500) + 'ms';
+    wrap.appendChild(dot);
+  }
+  return wrap;
 }
 
-function circleWithLabel(svg, cx, cy, r, value, color) {
-  svg.appendChild(
-    node('circle', {
-      cx,
-      cy,
-      r,
-      fill: '#ffffff',
-      stroke: color,
-      'stroke-width': 5,
-    })
-  );
-  const text = node('text', {
-    x: cx,
-    y: cy,
-    'text-anchor': 'middle',
-    'dominant-baseline': 'central',
-    fill: color,
-    'font-size': r * 1.05,
-    'font-weight': '800',
-    'font-family': 'inherit',
-  });
-  text.textContent = String(value);
-  svg.appendChild(text);
+function bondCircle(value, color, extraClass) {
+  const cell = document.createElement('div');
+  cell.className = 'bond__cell ' + (extraClass || '');
+
+  const circle = document.createElement('div');
+  circle.className = 'bond__circle';
+  circle.style.borderColor = color;
+  if (value <= MAX_DRAWN) {
+    circle.appendChild(bondDots(value, color));
+  } else {
+    // Past the draw limit a circle full of dots is a smudge, not a quantity.
+    const big = document.createElement('span');
+    big.className = 'bond__big';
+    big.textContent = String(value);
+    big.style.color = color;
+    circle.appendChild(big);
+    cell.classList.add('bond__cell--numeral');
+  }
+  cell.appendChild(circle);
+
+  const num = document.createElement('div');
+  num.className = 'bond__num';
+  num.textContent = String(value);
+  num.style.color = color;
+  cell.appendChild(num);
+
+  return cell;
 }
 
 /**
@@ -46,40 +65,46 @@ function circleWithLabel(svg, cx, cy, r, value, color) {
  * @param {number} partB  second part
  */
 export function renderBond(whole, partA, partB) {
-  const wrap = document.createElement('div');
-  wrap.className = 'rep rep--bond rep--big';
-
-  const svg = node('svg', {
-    viewBox: '0 0 320 215',
-    class: 'bond-svg',
-    role: 'img',
-    'aria-label': `${whole} is made of ${partA} and ${partB}`,
-  });
-
-  const wholeColor = resultColor();
-  const branch = state.theme === 'calm' ? '#d3c5b4' : '#c9bcd6';
   const palette = partColors();
+  const wholeColor = resultColor();
   const colorA = palette[0].solid;
   const colorB = palette[1].solid;
 
-  // Branches first so the circles paint over their ends.
-  svg.appendChild(
-    node('line', {
-      x1: 160, y1: 52, x2: 76, y2: 163,
-      stroke: branch, 'stroke-width': 5, 'stroke-linecap': 'round',
-    })
-  );
-  svg.appendChild(
-    node('line', {
-      x1: 160, y1: 52, x2: 244, y2: 163,
-      stroke: branch, 'stroke-width': 5, 'stroke-linecap': 'round',
-    })
-  );
+  const wrap = document.createElement('div');
+  wrap.className = 'bond';
+  wrap.setAttribute('role', 'img');
+  wrap.setAttribute('aria-label', `${whole} is made of ${partA} and ${partB}`);
 
-  circleWithLabel(svg, 160, 52, 44, whole, wholeColor);
-  circleWithLabel(svg, 76, 163, 38, partA, colorA);
-  circleWithLabel(svg, 244, 163, 38, partB, colorB);
+  const top = document.createElement('div');
+  top.className = 'bond__top';
+  top.appendChild(bondCircle(whole, wholeColor, 'bond__cell--whole'));
+  wrap.appendChild(top);
 
-  wrap.appendChild(svg);
+  // The two branches, stretched to whatever width the parts end up at.
+  const links = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  links.setAttribute('class', 'bond__links');
+  links.setAttribute('viewBox', '0 0 100 24');
+  links.setAttribute('preserveAspectRatio', 'none');
+  links.setAttribute('aria-hidden', 'true');
+  [
+    [50, 0, 22, 24],
+    [50, 0, 78, 24],
+  ].forEach(([x1, y1, x2, y2]) => {
+    const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    line.setAttribute('x1', x1);
+    line.setAttribute('y1', y1);
+    line.setAttribute('x2', x2);
+    line.setAttribute('y2', y2);
+    line.setAttribute('class', 'bond__link');
+    links.appendChild(line);
+  });
+  wrap.appendChild(links);
+
+  const bottom = document.createElement('div');
+  bottom.className = 'bond__bottom';
+  bottom.appendChild(bondCircle(partA, colorA));
+  bottom.appendChild(bondCircle(partB, colorB));
+  wrap.appendChild(bottom);
+
   return wrap;
 }

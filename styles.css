@@ -208,6 +208,11 @@ body.theme-calm .journey__dot.on::before { background: #b5654e; }
   box-shadow: var(--shadow-soft), inset 0 0 0 4px #fff;
   display: flex;
   align-items: center;
+  /* When something is taller than the panel, centring it hides the top as well
+     as the bottom — and the top is where an explanation starts. "safe" keeps
+     the centring for everything that fits and falls back to the start for
+     anything that doesn't. */
+  align-items: safe center;
   justify-content: center;
   padding: 16px;
   /* Tall content (all the ways to make a number) may scroll; sideways it never
@@ -541,7 +546,36 @@ body.theme-calm .rep.all-counted { box-shadow: 0 0 0 4px #dce9d6; }
   gap: 12px;
   --item: clamp(20px, 6.5vw, 34px);
 }
-.maketen__lead,
+.maketen__from {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.maketen__fromnum {
+  font-weight: 800;
+  font-size: clamp(20px, 5.6vw, 28px);
+}
+.maketen__fromdots {
+  display: flex;
+  gap: 5px;
+}
+.maketen__fromdot {
+  width: calc(var(--item) * 0.8);
+  height: calc(var(--item) * 0.8);
+  border-radius: 6px;
+  flex: 0 0 auto;
+}
+/* The ones about to move wear the same ring they'll have in the frame. */
+.maketen__fromdot--moving {
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.9), 0 0 0 5px currentColor;
+  outline: 2px dashed var(--ink-soft);
+  outline-offset: 3px;
+}
+.maketen__arrow {
+  line-height: 1;
+  font-size: clamp(18px, 5vw, 24px);
+  color: var(--ink-soft);
+}
 .maketen__sum {
   font-weight: 800;
   color: var(--ink-soft);
@@ -554,75 +588,69 @@ body.theme-calm .rep.all-counted { box-shadow: 0 0 0 4px #dce9d6; }
 /* the beads that moved across to complete the ten */
 .tf-moved { box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.75); }
 
-/* --- Regrouping: ten ones traded for one ten ---------------------------- */
+/* --- Regrouping: ten ones traded for one ten ----------------------------
+   Told in pictures top to bottom: the loose ones, then ten of them gathered
+   with the leftovers beside, then the ten standing with the other tens. The
+   only word on the screen is the answer.
+   ------------------------------------------------------------------------ */
 
 .regroup {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 12px;
-  --item: clamp(17px, 5vw, 26px);
+  gap: 4px;
+  --item: clamp(14px, 4.2vw, 22px);
 }
-.regroup__lead,
-.regroup__leftcap {
-  font-weight: 800;
-  color: var(--ink-soft);
-  font-size: clamp(14px, 4vw, 18px);
-  text-align: center;
-}
-.regroup__trade {
-  /* Stacked, not side by side: the ten loose ones are above, the single ten
-     they become is below, and the arrow between them always points the right
-     way instead of into a wrapped line. */
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 6px;
-}
-.regroup__swap {
+.regroup__row {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 10px;
   flex-wrap: wrap;
-  justify-content: center;
 }
-.regroup__frame {
-  border-color: #b8c9ff;
+.regroup__sign {
+  font-weight: 800;
+  font-size: clamp(18px, 5vw, 26px);
+  color: var(--ink-soft);
 }
 .regroup__arrow {
   line-height: 1;
-  font-size: clamp(20px, 6vw, 28px);
-  font-weight: 800;
+  font-size: clamp(18px, 5vw, 24px);
   color: var(--ink-soft);
 }
-.regroup__newten {
+.regroup__frame {
+  border-color: #9fb4ea;
+  border-width: 3px;
+}
+.regroup__tens {
   display: flex;
-  gap: 2px;
-  padding: 4px;
+  flex-direction: column;
+  gap: 3px;
+}
+.regroup__tenbar {
+  display: flex;
+  gap: 1px;
+  padding: 2px;
   border-radius: 999px;
-  background: rgba(232, 169, 12, 0.14);
-  box-shadow: 0 0 0 3px rgba(232, 169, 12, 0.5);
+  background: rgba(232, 169, 12, 0.12);
 }
-.regroup__tenlabel {
-  font-weight: 800;
-  color: #b07d06;
-  font-size: clamp(13px, 3.6vw, 16px);
+/* The one that was just traded for gets a ring, so it is findable among the
+   tens that were already there. */
+.regroup__tenbar--new {
+  box-shadow: 0 0 0 3px rgba(232, 169, 12, 0.75);
 }
-body.theme-calm .regroup__tenlabel {
-  color: #9a7434;
+.regroup__tenbar .bead {
+  width: calc(var(--item) * 0.72);
+  height: calc(var(--item) * 0.72);
 }
-.regroup__left {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
-  justify-content: center;
+.regroup__row--answer {
+  padding-top: 2px;
 }
 .ones {
   display: flex;
   gap: 4px;
   flex-wrap: wrap;
-  max-width: calc(var(--item) * 5 + 16px);
+  max-width: calc(var(--item) * 5 + 20px);
   justify-content: center;
 }
 .one {
@@ -634,18 +662,22 @@ body.theme-calm .regroup__tenlabel {
 }
 .regroup__sum {
   font-weight: 800;
-  font-size: clamp(17px, 5vw, 24px);
-  text-align: center;
+  font-size: clamp(26px, 8vw, 40px);
+  color: var(--ink);
+  margin-top: 2px;
 }
 
-/* --- Comparison bars: how many more? ------------------------------------ */
+/* --- Comparison bars: how many more? ------------------------------------
+   The gap is drawn as empty blocks the same size as the full ones, so the
+   answer is something a child can count rather than estimate.
+   ------------------------------------------------------------------------ */
 
 .compare {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
   width: 100%;
-  max-width: 320px;
+  max-width: 340px;
 }
 .compare__row {
   display: flex;
@@ -654,15 +686,42 @@ body.theme-calm .regroup__tenlabel {
 }
 .compare__num {
   font-weight: 800;
-  font-size: clamp(18px, 5vw, 24px);
-  min-width: 1.8em;
+  font-size: clamp(20px, 5.6vw, 28px);
+  min-width: 1.6em;
   text-align: right;
   font-variant-numeric: tabular-nums;
 }
-.compare__track {
+.compare--blocks .compare__track {
   flex: 1 1 auto;
+  min-width: 0;
   display: flex;
-  align-items: stretch;
+  gap: 3px;
+}
+/* The groups exist in the markup but not in the layout, so every block is a
+   sibling sharing one track — which is what keeps the two rows lined up. */
+.compare--blocks .compare__blocks {
+  display: contents;
+}
+.compare__block {
+  flex: 1 1 0;
+  min-width: 6px;
+  max-width: 34px;
+  aspect-ratio: 1;
+  border-radius: 5px;
+}
+/* Empty blocks: the difference, countable. */
+.compare__blocks--gap .compare__block {
+  background: transparent;
+  border: 3px dashed var(--ink-soft);
+}
+.compare__cap {
+  text-align: center;
+  font-weight: 800;
+  font-size: clamp(17px, 4.8vw, 23px);
+  color: var(--ink);
+}
+/* Bigger numbers fall back to proportional bars. */
+.compare:not(.compare--blocks) .compare__track {
   height: clamp(30px, 8vw, 42px);
   border-radius: 10px;
   overflow: hidden;
@@ -670,13 +729,10 @@ body.theme-calm .regroup__tenlabel {
 }
 .compare__fill {
   border-radius: 10px 0 0 10px;
-  transition: width 0.35s ease;
 }
 .compare__row:first-child .compare__fill {
   border-radius: 10px;
 }
-/* The gap between the bars is the answer, so it gets said out loud in the
-   picture too rather than being an absence. */
 .compare__gap {
   display: flex;
   align-items: center;
@@ -686,14 +742,104 @@ body.theme-calm .regroup__tenlabel {
   border-radius: 0 10px 10px 0;
   font-weight: 800;
   font-size: clamp(15px, 4.2vw, 20px);
-  color: var(--ink);
   min-width: 1.6em;
 }
-.compare__cap {
-  text-align: center;
+
+.answer-only {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+.answer-only__num {
   font-weight: 800;
-  font-size: clamp(15px, 4.2vw, 20px);
-  color: var(--ink-soft);
+  font-size: clamp(30px, 9vw, 46px);
+  line-height: 1;
+}
+
+/* --- Bond: the whole and its parts, with the things inside --------------- */
+
+.bond {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  --bond-size: clamp(80px, 24vw, 112px);
+}
+.bond__top,
+.bond__bottom {
+  display: flex;
+  justify-content: center;
+  gap: clamp(24px, 9vw, 52px);
+}
+.bond__cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+/* The whole wears its numeral on top, so the branches run from the circle
+   itself rather than appearing to sprout from a label. */
+.bond__cell--whole {
+  flex-direction: column-reverse;
+}
+.bond__circle {
+  width: var(--bond-size);
+  height: var(--bond-size);
+  border-radius: 50%;
+  border: 4px solid;
+  background: var(--panel);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16%;
+}
+.bond__cell--whole .bond__circle {
+  width: calc(var(--bond-size) * 1.12);
+  height: calc(var(--bond-size) * 1.12);
+}
+.bond__dots {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8%;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+}
+.bond__dot {
+  width: var(--bdot);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  flex: 0 0 auto;
+}
+.bond__num {
+  font-weight: 800;
+  font-size: clamp(19px, 5.4vw, 26px);
+  line-height: 1;
+}
+.bond__big {
+  font-weight: 800;
+  font-size: clamp(26px, 8vw, 40px);
+  line-height: 1;
+}
+/* When the circle holds a numeral the label under it would just repeat it. */
+.bond__cell--numeral .bond__num {
+  display: none;
+}
+.bond__links {
+  width: 100%;
+  height: clamp(20px, 6vw, 32px);
+  display: block;
+  margin-top: -2px;
+}
+.bond__link {
+  stroke: #c9bcd6;
+  stroke-width: 3;
+  stroke-linecap: round;
+  vector-effect: non-scaling-stroke;
+}
+body.theme-calm .bond__link {
+  stroke: #d3c5b4;
 }
 
 /* --- Equation (stacked math) ------------------------------------------- */
@@ -1348,6 +1494,9 @@ body.theme-calm .btn-back   { background: linear-gradient(180deg,#eae5db,#d3ccbf
   .app {
     gap: 6px;
   }
+  .display {
+    padding: 8px;
+  }
   :root {
     --btn-h: clamp(44px, 7.6vh, 56px);
   }
@@ -1370,6 +1519,90 @@ body.theme-calm .btn-back   { background: linear-gradient(180deg,#eae5db,#d3ccbf
     width: 40px;
     height: 40px;
     font-size: 19px;
+  }
+}
+
+/* A phone held sideways stacks a full-width keypad under a squashed panel,
+   leaving the picture about a hundred pixels tall — too little for anything
+   with more than one row in it. Side by side, the panel gets the whole height
+   instead. */
+@media (max-height: 540px) and (min-width: 600px) {
+  .app {
+    display: grid;
+    grid-template-columns: 1.15fr 1fr;
+    grid-template-rows: auto minmax(0, 1fr);
+    grid-template-areas:
+      'bar bar'
+      'stage pad';
+    column-gap: 16px;
+    row-gap: 6px;
+    max-width: none;
+  }
+  .topbar {
+    grid-area: bar;
+  }
+  .stage {
+    grid-area: stage;
+    min-height: 0;
+  }
+  .keypad {
+    grid-area: pad;
+    align-self: center;
+  }
+  .display {
+    min-height: 0;
+  }
+  .tap-hint {
+    display: none;
+  }
+  /* The panel is tall but narrow here, and an equation stacks three rows. */
+  .rep--small {
+    --item: clamp(9px, 2.4vw, 15px);
+    --gap: 3px;
+  }
+  .equation--visual {
+    gap: 5px 8px;
+  }
+  .maketen {
+    --item: clamp(12px, 3.4vw, 19px);
+  }
+}
+
+/* The explanation screens carry several rows. On a short phone the panel is
+   only a couple of hundred pixels tall, and a child should not have to scroll
+   to find the end of an idea — so the pieces get smaller instead. */
+@media (max-height: 700px) {
+  .regroup {
+    gap: 2px;
+    --item: clamp(11px, 3.4vw, 17px);
+  }
+  .regroup__sum {
+    font-size: clamp(21px, 6vw, 30px);
+  }
+  .maketen {
+    gap: 7px;
+    --item: clamp(15px, 4.6vw, 24px);
+  }
+  .compare {
+    gap: 7px;
+  }
+  .bond {
+    --bond-size: clamp(58px, 17vw, 78px);
+  }
+  .bond__num {
+    font-size: clamp(16px, 4.6vw, 21px);
+  }
+  .ways {
+    gap: 3px;
+  }
+  /* Equation rows stack three quantities; on a short panel the pieces have to
+     give way or the answer falls off the bottom. */
+  .rep--small {
+    --item: clamp(11px, 3.4vw, 18px);
+    --gap: 3px;
+  }
+  .equation--visual {
+    gap: 7px 10px;
   }
 }
 

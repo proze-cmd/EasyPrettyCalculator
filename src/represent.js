@@ -264,12 +264,34 @@ export function renderMakeTen(a, b, need, rest) {
   const wrap = document.createElement('div');
   wrap.className = 'maketen';
 
-  const lead = document.createElement('div');
-  lead.className = 'maketen__lead';
-  lead.append(
-    strong(a, A), text(' needs '), strong(need, B), text(' more to make '), strong(10, null)
-  );
-  wrap.appendChild(lead);
+  // Where the borrowed ones come from. The second number is drawn whole, with
+  // the few that are about to move marked exactly as they will look once they
+  // land in the frame — so the child can follow them across rather than being
+  // told in a sentence that they went.
+  const from = document.createElement('div');
+  from.className = 'maketen__from';
+  const fromLabel = document.createElement('span');
+  fromLabel.className = 'maketen__fromnum';
+  fromLabel.textContent = String(b);
+  fromLabel.style.color = B;
+  from.appendChild(fromLabel);
+  const fromDots = document.createElement('div');
+  fromDots.className = 'maketen__fromdots';
+  for (let i = 0; i < b; i++) {
+    const dot = document.createElement('span');
+    dot.className = 'maketen__fromdot pop-in';
+    dot.style.background = B;
+    dot.style.animationDelay = Math.min(i * 50, 400) + 'ms';
+    if (i < need) dot.classList.add('maketen__fromdot--moving');
+    fromDots.appendChild(dot);
+  }
+  from.appendChild(fromDots);
+  wrap.appendChild(from);
+
+  const arrow = document.createElement('div');
+  arrow.className = 'maketen__arrow';
+  arrow.textContent = '↓';
+  wrap.appendChild(arrow);
 
   const frames = document.createElement('div');
   frames.className = 'maketen__frames';
@@ -466,18 +488,31 @@ export function renderRegroup(r) {
   const wrap = document.createElement('div');
   wrap.className = 'regroup';
 
-  const lead = document.createElement('div');
-  lead.className = 'regroup__lead';
-  lead.append(
-    strong(r.onesA, onesColor), text(' ones and '), strong(r.onesB, onesColor),
-    text(' ones make '), strong(r.onesSum, null)
-  );
-  wrap.appendChild(lead);
+  const goldBar = (delay) => {
+    const bar = document.createElement('span');
+    bar.className = 'regroup__tenbar pop-in';
+    bar.style.animationDelay = delay + 'ms';
+    for (let i = 0; i < 10; i++) {
+      const bead = document.createElement('span');
+      bead.className = 'bead';
+      bead.style.background = gold;
+      if (i === 5) bead.classList.add('bead--break');
+      bar.appendChild(bead);
+    }
+    return bar;
+  };
 
-  // Ten of them fill a frame and become a single ten.
-  const trade = document.createElement('div');
-  trade.className = 'regroup__trade';
+  // 1. The loose ones from both numbers, as themselves.
+  const row1 = document.createElement('div');
+  row1.className = 'regroup__row';
+  row1.append(onesRow(r.onesA, onesColor), sign('+'), onesRow(r.onesB, onesColor));
+  wrap.appendChild(row1);
 
+  wrap.appendChild(arrowDown());
+
+  // 2. Ten of them, gathered — and the five that didn't fit.
+  const row2 = document.createElement('div');
+  row2.className = 'regroup__row';
   const frame = document.createElement('div');
   frame.className = 'tenframe regroup__frame';
   for (let i = 0; i < 10; i++) {
@@ -485,56 +520,51 @@ export function renderRegroup(r) {
     cell.className = 'tf-cell tf-filled pop-in';
     cell.style.background = onesColor;
     cell.style.borderColor = onesColor;
-    cell.style.animationDelay = Math.min(i * 45, 450) + 'ms';
+    cell.style.animationDelay = 300 + Math.min(i * 40, 400) + 'ms';
     frame.appendChild(cell);
   }
-  trade.appendChild(frame);
+  row2.appendChild(frame);
+  if (r.onesLeft > 0) row2.append(onesRow(r.onesLeft, onesColor));
+  wrap.appendChild(row2);
 
-  const arrow = document.createElement('span');
-  arrow.className = 'regroup__arrow';
-  arrow.textContent = '↓';
-  trade.appendChild(arrow);
+  wrap.appendChild(arrowDown());
 
-  const newTen = document.createElement('span');
-  newTen.className = 'regroup__newten';
-  for (let i = 0; i < 10; i++) {
-    const bead = document.createElement('span');
-    bead.className = 'bead';
-    bead.style.background = gold;
-    if (i === 5) bead.classList.add('bead--break');
-    newTen.appendChild(bead);
+  // 3. The ten becomes a ten bar, standing with the tens already there, and
+  //    the leftovers stay leftovers. This last line *is* the answer, drawn.
+  const row3 = document.createElement('div');
+  row3.className = 'regroup__row regroup__row--answer';
+  const tens = document.createElement('div');
+  tens.className = 'regroup__tens';
+  for (let i = 0; i < r.tensTotal; i++) {
+    const bar = goldBar(700 + i * 110);
+    // The last ten is the one that was just traded for.
+    if (i === r.tensTotal - 1) bar.classList.add('regroup__tenbar--new');
+    tens.appendChild(bar);
   }
-  const tenLabel = document.createElement('span');
-  tenLabel.className = 'regroup__tenlabel';
-  tenLabel.textContent = 'a new ten!';
-
-  const swap = document.createElement('div');
-  swap.className = 'regroup__swap';
-  swap.append(newTen, tenLabel);
-  trade.appendChild(swap);
-
-  wrap.appendChild(trade);
-
-  if (r.onesLeft > 0) {
-    const left = document.createElement('div');
-    left.className = 'regroup__left';
-    const cap = document.createElement('span');
-    cap.className = 'regroup__leftcap';
-    cap.append(text('and '), strong(r.onesLeft, onesColor), text(' left over'));
-    left.append(onesRow(r.onesLeft, onesColor), cap);
-    wrap.appendChild(left);
-  }
+  row3.appendChild(tens);
+  if (r.onesLeft > 0) row3.appendChild(onesRow(r.onesLeft, onesColor));
+  wrap.appendChild(row3);
 
   const sum = document.createElement('div');
   sum.className = 'regroup__sum';
-  sum.append(
-    strong(r.tensTotal, gold), text(r.tensTotal === 1 ? ' ten and ' : ' tens and '),
-    strong(r.onesLeft, onesColor), text(r.onesLeft === 1 ? ' one = ' : ' ones = '),
-    strong(r.result, null)
-  );
+  sum.textContent = String(r.result);
   wrap.appendChild(sum);
 
   return wrap;
+}
+
+function sign(ch) {
+  const el = document.createElement('span');
+  el.className = 'regroup__sign';
+  el.textContent = ch;
+  return el;
+}
+
+function arrowDown() {
+  const el = document.createElement('div');
+  el.className = 'regroup__arrow';
+  el.textContent = '↓';
+  return el;
 }
 
 // ---------------------------------------------------------------------------
@@ -548,53 +578,77 @@ export function renderRegroup(r) {
  */
 export function renderCompare(bigger, smaller, diff) {
   const palette = partColors();
-  const wrap = document.createElement('div');
-  wrap.className = 'compare';
+  // Small enough to draw block by block? Then the difference is something the
+  // child can count, not just something they can see is bigger. That is the
+  // whole point of the question "how many more".
+  const segmented = bigger <= MAX_DRAWN;
 
-  const bar = (value, width, cls) => {
+  const wrap = document.createElement('div');
+  wrap.className = 'compare' + (segmented ? ' compare--blocks' : '');
+  // Block width is left to the layout rather than computed from the viewport:
+  // both rows hold exactly `bigger` blocks, so letting them share the track
+  // keeps the two bars aligned and fits whatever width the panel actually has,
+  // including the narrower column a landscape phone gets.
+
+  const blocks = (count, color, cls, startDelay) => {
+    const holder = document.createElement('div');
+    holder.className = 'compare__blocks ' + (cls || '');
+    for (let i = 0; i < count; i++) {
+      const cell = document.createElement('span');
+      cell.className = 'compare__block pop-in';
+      if (color) cell.style.background = color;
+      cell.style.animationDelay = Math.min(startDelay + i * 45, 900) + 'ms';
+      holder.appendChild(cell);
+    }
+    return holder;
+  };
+
+  const makeRow = (value, color) => {
     const rowEl = document.createElement('div');
     rowEl.className = 'compare__row';
-
     const num = document.createElement('span');
     num.className = 'compare__num';
     num.textContent = String(value);
+    num.style.color = color;
     rowEl.appendChild(num);
-
     const track = document.createElement('div');
     track.className = 'compare__track';
-    const fill = document.createElement('div');
-    fill.className = 'compare__fill ' + cls;
-    fill.style.width = width + '%';
-    track.appendChild(fill);
     rowEl.appendChild(track);
     return { rowEl, track };
   };
 
-  const top = bar(bigger, 100, 'compare__fill--a');
-  top.rowEl.querySelector('.compare__fill').style.background = palette[0].solid;
-  wrap.appendChild(top.rowEl);
+  const top = makeRow(bigger, palette[0].solid);
+  const bottom = makeRow(smaller, palette[1].solid);
 
-  const pct = bigger > 0 ? (smaller / bigger) * 100 : 0;
-  const bottom = bar(smaller, pct, 'compare__fill--b');
-  bottom.rowEl.querySelector('.compare__fill').style.background = palette[1].solid;
+  if (segmented) {
+    top.track.appendChild(blocks(bigger, palette[0].solid, '', 0));
+    bottom.track.appendChild(blocks(smaller, palette[1].solid, '', 0));
+    // The gap is drawn as empty blocks of the same size, so the answer can be
+    // counted straight off the picture.
+    const gapBlocks = blocks(diff, null, 'compare__blocks--gap', 400);
+    bottom.track.appendChild(gapBlocks);
+  } else {
+    const pct = bigger > 0 ? (smaller / bigger) * 100 : 0;
+    const fillA = document.createElement('div');
+    fillA.className = 'compare__fill';
+    fillA.style.cssText = `width:100%;background:${palette[0].solid}`;
+    top.track.appendChild(fillA);
+    const fillB = document.createElement('div');
+    fillB.className = 'compare__fill';
+    fillB.style.cssText = `width:${pct}%;background:${palette[1].solid}`;
+    bottom.track.appendChild(fillB);
+    const gap = document.createElement('div');
+    gap.className = 'compare__gap';
+    gap.style.width = 100 - pct + '%';
+    gap.appendChild(strong(diff, null));
+    bottom.track.appendChild(gap);
+  }
 
-  // The gap between the two bars is the difference — labelled, because that is
-  // the number the child is looking for.
-  const gap = document.createElement('div');
-  gap.className = 'compare__gap';
-  gap.style.width = 100 - pct + '%';
-  const gapLabel = document.createElement('span');
-  gapLabel.textContent = String(diff);
-  gap.appendChild(gapLabel);
-  bottom.track.appendChild(gap);
-  wrap.appendChild(bottom.rowEl);
+  wrap.append(top.rowEl, bottom.rowEl);
 
   const cap = document.createElement('div');
   cap.className = 'compare__cap';
-  cap.append(
-    strong(bigger, palette[0].solid), text(' is '), strong(diff, null),
-    text(' more than '), strong(smaller, palette[1].solid)
-  );
+  cap.append(strong(diff, null), text(' more'));
   wrap.appendChild(cap);
 
   return wrap;

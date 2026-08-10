@@ -141,6 +141,23 @@ Do this on **390×844** first, then repeat the shaded rows on 320×568,
 
 ---
 
+## The word/picture test
+
+The concept screens are the ones a struggling child needs most, and they were
+the ones leaning hardest on reading. Count them: for each explanation view,
+how many *words* and how many *shapes* are on screen?
+
+| Screen | words | what carries the idea |
+|---|---|---|
+| Bond | 0 | dots inside all three circles |
+| Make a ten | 0 | the 5 drawn whole with the movers marked |
+| Regrouping | 0 | ones → a gathered ten → tens and ones |
+| Comparison | 1 | blocks, with the gap drawn as empty ones |
+| Ways to make | 1 | the staircase |
+
+**If a screen's word count creeps up, it has stopped explaining and started
+telling.** A pre-reader must be able to get it with the sound off.
+
 ## Judgement questions — ask these every pass
 
 1. Which screen would a four-year-old skip? Why is it still there?
@@ -150,6 +167,8 @@ Do this on **390×844** first, then repeat the shaded rows on 320×568,
    or is it a decoration wearing its name?
 5. What's the longest path to something useful? (Should be ~2 taps.)
 6. Is any text doing work an icon or a voice should do?
+7. Cover the words with your thumb. Does the screen still teach?
+8. Can the child see *where a number came from*, or only that it appeared?
 
 ---
 

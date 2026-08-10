@@ -42,7 +42,7 @@ palette) · **Reggio** (natural loose parts, child's choice, many representation
 |---|---|---|
 | I1 | No row of items exceeds 5 | `.rows .row` child count ≤ 5 everywhere |
 | I2 | Nothing draws > 20 loose items | `.obj` count ≤ 20; above that expect `.tenframe` |
-| I3 | Smallest touchable thing ≥ ~15px | measure `.obj` / `.tf-filled` / `.bead` widths |
+| I3 | Nothing under ~15px is offered for counting | measure `offsetWidth`; if any is under, the hint must read "tap to see it another way" |
 | I4 | No level can exceed its `maxValue` | try to type past it on every level |
 | I5 | Subtraction never negative | try `3 − 9` |
 | I6 | No horizontal scroll, ever | `display.scrollWidth ≤ clientWidth` |
@@ -50,6 +50,22 @@ palette) · **Reggio** (natural loose parts, child's choice, many representation
 | I8 | No console errors | listen for `pageerror` throughout |
 | I9 | Counting only in quantity views | explanation views must not mark `.counted` |
 | I10 | Counting is per row in an equation | 5 + 4 = 9 must say "5", then "4", then "9" — never 18 |
+| I11 | **The answer is visible without scrolling** | `display.scrollHeight ≤ clientHeight` on every solved sum |
+
+**I2 is per quantity, not per screen.** `8 + 5 = 13` draws 26 things, and that is
+fine — each row is its own countable amount and counting is scoped to a row
+(I10). Measure `.obj` inside each `.rep`, not inside `#display`.
+
+**I3 is about things you touch.** Bond dots and regrouping cells are diagram
+parts, not touch targets — `COUNTABLE_VIEWS` is the list of views where touching
+counts. Judge a diagram on whether it is *structured and legible* (≥10px and in
+rows), not against the 15px finger rule.
+
+A crowded equation is *allowed* to draw below 15px — that is how the answer
+stays on screen. What it may not do is still invite taps. `countingOffered()`
+decides for the whole screen at once, from `offsetWidth`, and the hint, the tap
+handler and the fumble guard all read it. Check they agree: **the hint is a
+promise, and a tap must keep it.**
 
 ---
 
@@ -70,6 +86,18 @@ palette) · **Reggio** (natural loose parts, child's choice, many representation
   breaks if the label becomes "9, too big".
 - **Hand-computed layout claims are unreliable** — one review "proved" the
   keypad was clipped; measuring showed it fits. Always measure.
+- **`.equation__row` is `display: contents`** — it has no box, so
+  `getBoundingClientRect()` on it returns all zeros. An "answer is cut off"
+  verdict built on that is meaningless. Measure the row's *children*, or use
+  `display.scrollHeight`.
+- **Guessed selectors fail open.** `.key--muted` (not a real class) reported
+  "no keys dim" and `/🐚/` against a list of *word* labels reported "no natural
+  materials" — both were wrong, and both looked like real regressions. Grep the
+  source for the class name before asserting on it.
+- **A percentage `gap` in a flex *column* resolves against height**, which is
+  indefinite unless something gives the container one. It silently becomes 0.
+- **A percentage `width` inside a sized grid cell is a fraction of a fraction.**
+  Bond pips came out 5px this way.
 
 ---
 
@@ -104,7 +132,9 @@ Do this on **390×844** first, then repeat the shaded rows on 320×568,
 - `5 + 4 =` → stacked equation, `=` under the line, answer green.
 - Objects view: pink 5 above blue 4; the answer is that **same** pink 5 beside
   that **same** blue 4 (principle 6).
-- Bond: 9 on top, 5 and 4 below, colours matching the equation.
+- Bond: 5 as a dice five, 4 as a dice four, and the 9 on top drawn as **that
+  pink five above that blue four**. No row over five. Past ten the circle shows
+  a numeral, and the bond is not offered at all once both parts are over ten.
 - Ways: 8 strips, `1 + 8` … `8 + 1`, a clean staircase.
 - Type `9` then `+` → every digit above 1 dims. Press one → wobble + "too big".
 
@@ -129,7 +159,12 @@ Do this on **390×844** first, then repeat the shaded rows on 320×568,
 - `45` as a quantity → ten-frames, not 45 loose things.
 
 ### Level 9 — Equal Groups
-- `4 × 5 =` → answer is **4 groups of 5**, each on its own coloured plate.
+- `4 × 5 =` → answer is **4 groups of 5**, each on its own coloured plate, all
+  four **on one line and fully visible** (I11). This level's keypad is a row
+  taller than most, so its display is the shortest in the app (~324px on a
+  390×844 phone) — it is where an equation runs out of room first.
+- The answer's plates must never be drawn **bigger** than the operands' above
+  them; if they are, the density ladder has overridden `.rep--small` upward.
 - `9 × 9` must be **impossible** — level caps at 20 (I4).
 
 ### Level 10 — Fair Shares
@@ -196,5 +231,9 @@ telling.** A pre-reader must be able to get it with the sound off.
   number, not a style choice.
 - Rods show the **whole** number, never split into parts — that's their job, and
   the grouped views already cover splitting.
+- **Rods and bar models are lines on purpose.** I1 is about quantities you count
+  one by one. A Montessori rod, a golden ten-bar and a Singapore comparison bar
+  all mean *length*, and breaking them into groups of five would destroy the one
+  thing they exist to show. They keep the break after the fifth bead instead.
 - "Ways to make" lives on **solved sums**, not the counting levels.
 - Pressing a second operator **shows the answer** rather than chaining silently.

@@ -371,18 +371,36 @@ body.has-interacted .tap-hint {
   flex-direction: column;
   align-items: flex-start;
   gap: calc(var(--gap) + 4px);
+  width: 100%;
 }
 .rodline {
   display: flex;
   align-items: center;
   gap: 10px;
+  width: 100%;
 }
+/* A rod is the widest thing the app draws — ten beads plus a numeral. Rather
+   than letting a long one overrun the panel, the bar shrinks its beads to fit.
+   The bar still starts at the left edge, so length stays comparable between
+   one number and the next, which is the whole point of the material. */
 .rod {
   display: flex;
   gap: 2px;
   padding: 3px;
   border-radius: 999px;
   background: rgba(0, 0, 0, 0.04);
+  flex: 0 1 auto;
+  min-width: 0;
+}
+.rod .bead {
+  flex: 1 1 0;
+  min-width: 0;
+  max-width: var(--item);
+  height: auto;
+  aspect-ratio: 1;
+}
+.rod__label {
+  flex: 0 0 auto;
 }
 .bead {
   flex: 0 0 auto;
@@ -877,9 +895,37 @@ body.theme-calm .pairs__verdict--odd {
 }
 .bond__dots {
   display: flex;
-  flex-wrap: wrap;
-  gap: 8%;
+  flex-direction: column;
+  gap: var(--bgap, 6%);
   align-items: center;
+  justify-content: center;
+  width: 100%;
+  /* The circle has a definite height, so giving the stack all of it lets the
+     percentage row-gap resolve instead of collapsing to nothing. */
+  height: 100%;
+}
+/* Dice faces keep their blank cells, so the pattern holds its shape. */
+.bond__dots--pips {
+  display: grid;
+  grid-template-columns: repeat(3, var(--bdot));
+  grid-auto-rows: var(--bdot);
+  gap: var(--bgap, 6%);
+  place-content: center;
+  height: 100%;
+}
+/* Inside the grid the cell is already the right size, so a percentage width
+   here would be a fraction of a fraction. */
+.bond__dots--pips .bond__dot {
+  width: 100%;
+}
+.bond__blank {
+  display: block;
+}
+/* Rows come from the grouping engine, so five is the most that can ever be
+   in one — the same rule the rest of the app draws by. */
+.bond__row {
+  display: flex;
+  gap: var(--bgap, 6%);
   justify-content: center;
   width: 100%;
 }
@@ -1621,6 +1667,11 @@ body.theme-calm .btn-back   { background: linear-gradient(180deg,#eae5db,#d3ccbf
   .stage {
     grid-area: stage;
     min-height: 0;
+    /* A grid item defaults to a min-content floor, and the widest thing the app
+       draws — a ten-bead rod — sets that floor above the track it was given.
+       The column then grows and shoves the keypad off the side of the screen.
+       Zero lets the track hold its share; the rod shrinks its beads to fit. */
+    min-width: 0;
   }
   .keypad {
     grid-area: pad;
@@ -1628,6 +1679,7 @@ body.theme-calm .btn-back   { background: linear-gradient(180deg,#eae5db,#d3ccbf
   }
   .display {
     min-height: 0;
+    min-width: 0;
   }
   .tap-hint {
     display: none;

@@ -10,35 +10,103 @@
 // where it can be read off rather than relied upon.
 
 import { partColors, resultColor } from './represent.js';
-import { MAX_DRAWN } from './config.js';
+import { rowsFor, pipCells } from './arrange.js';
 
-/** Dots inside a bond circle, in short rows so they read as a group. */
-function bondDots(n, color) {
+/**
+ * The most dots a bond circle can hold and still be read. A circle is a poor
+ * container for a grid: past ten the rows no longer fit inside the curve and
+ * the quantity turns into a smudge, so the numeral is the honest picture.
+ *
+ * Ten is also where the bond belongs. Number bonds are the to-ten structure;
+ * once an addition crosses ten, make-a-ten and regrouping are the views that
+ * actually explain it, and both are already offered.
+ */
+const BOND_MAX_DOTS = 10;
+
+const GAP = 6; // percent, between dots and between rows
+
+/**
+ * Dots inside a bond circle.
+ *
+ * `segments` is one or more {n, color} pieces. The whole is passed both of its
+ * parts, so the nine on top is drawn as the same five and the same four that
+ * sit in the circles below it — the parts stay visible inside the whole.
+ *
+ * Rows come from the same grouping engine as the rest of the app, so the rule
+ * that nothing is ever more than five in a row holds here too.
+ */
+function bondDots(segments) {
   const wrap = document.createElement('div');
   wrap.className = 'bond__dots';
-  // Sized so the dots land in tidy rows inside the circle — three to a row for
-  // the single digits, which puts nine up as three rows of three rather than a
-  // clump nobody can read at a glance.
-  wrap.style.setProperty('--bdot', n <= 4 ? '38%' : n <= 9 ? '26%' : n <= 12 ? '20%' : '16%');
-  for (let i = 0; i < n; i++) {
-    const dot = document.createElement('span');
-    dot.className = 'bond__dot pop-in';
-    dot.style.background = color;
-    dot.style.animationDelay = Math.min(i * 45, 500) + 'ms';
-    wrap.appendChild(dot);
+
+  // A single small quantity gets the dice face the rest of the app draws, so a
+  // four in a circle is the same four a child already recognises everywhere.
+  const single = segments.length === 1 ? pipCells(segments[0].n) : null;
+  if (single) return pipGrid(wrap, single, segments[0].color);
+
+  const rows = [];
+  segments.forEach((seg) => {
+    // Each part keeps its own shape inside the whole; it is the colour that
+    // says which part a dot belongs to, so the split can stay square.
+    rowsFor(seg.n).forEach((count) => rows.push({ count, color: seg.color }));
+  });
+
+  // Dots are sized by whichever way round the circle runs out first, so a tall
+  // stack shrinks just as a wide row does and neither escapes the curve.
+  const cols = Math.max(...rows.map((r) => r.count));
+  const byWidth = (100 - (cols - 1) * GAP) / cols;
+  const byHeight = (100 - (rows.length - 1) * GAP) / rows.length;
+  wrap.style.setProperty('--bdot', `${Math.min(byWidth, byHeight)}%`);
+  wrap.style.setProperty('--bgap', `${GAP}%`);
+
+  let drawn = 0;
+  rows.forEach((row) => {
+    const line = document.createElement('div');
+    line.className = 'bond__row';
+    for (let i = 0; i < row.count; i++) {
+      line.appendChild(makeDot(row.color, drawn++));
+    }
+    wrap.appendChild(line);
+  });
+  return wrap;
+}
+
+function makeDot(color, index) {
+  const dot = document.createElement('span');
+  dot.className = 'bond__dot pop-in';
+  dot.style.background = color;
+  dot.style.animationDelay = Math.min(index * 45, 500) + 'ms';
+  return dot;
+}
+
+/** A dice face: nine cells, filled at the positions that make the pattern. */
+function pipGrid(wrap, cells, color) {
+  wrap.classList.add('bond__dots--pips');
+  wrap.style.setProperty('--bdot', `${(100 - 2 * GAP) / 3}%`);
+  wrap.style.setProperty('--bgap', `${GAP}%`);
+  const filled = new Set(cells);
+  let drawn = 0;
+  for (let i = 0; i < 9; i++) {
+    if (filled.has(i)) {
+      wrap.appendChild(makeDot(color, drawn++));
+    } else {
+      const blank = document.createElement('span');
+      blank.className = 'bond__blank';
+      wrap.appendChild(blank);
+    }
   }
   return wrap;
 }
 
-function bondCircle(value, color, extraClass) {
+function bondCircle(value, color, extraClass, segments) {
   const cell = document.createElement('div');
   cell.className = 'bond__cell ' + (extraClass || '');
 
   const circle = document.createElement('div');
   circle.className = 'bond__circle';
   circle.style.borderColor = color;
-  if (value <= MAX_DRAWN) {
-    circle.appendChild(bondDots(value, color));
+  if (value <= BOND_MAX_DOTS) {
+    circle.appendChild(bondDots(segments || [{ n: value, color }]));
   } else {
     // Past the draw limit a circle full of dots is a smudge, not a quantity.
     const big = document.createElement('span');
@@ -77,7 +145,14 @@ export function renderBond(whole, partA, partB) {
 
   const top = document.createElement('div');
   top.className = 'bond__top';
-  top.appendChild(bondCircle(whole, wholeColor, 'bond__cell--whole'));
+  // The whole is drawn out of its own two parts, in the parts' colours, so the
+  // answer is visibly made of the things it came from rather than a new pile.
+  top.appendChild(
+    bondCircle(whole, wholeColor, 'bond__cell--whole', [
+      { n: partA, color: colorA },
+      { n: partB, color: colorB },
+    ])
+  );
   wrap.appendChild(top);
 
   // The two branches, stretched to whatever width the parts end up at.

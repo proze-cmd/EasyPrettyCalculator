@@ -113,9 +113,9 @@ function renderGrouped(n, o) {
   const { mode, groups, size, themeIndex, groupColors, uniformColor, removedGroups, forceChip } = o;
   const wrap = shell('rep--grouped', size);
 
-  applyDensity(wrap, n);
-
   const list = groups && groups.length ? groups : [n];
+  applyDensity(wrap, n, list.length, size);
+
   const multi = list.length > 1;
   // A tinted plate normally marks off one group from the next. Equation rows
   // ask for one anyway, even with a single group: it is what ties the pink 5
@@ -774,11 +774,24 @@ function shell(modifier, size) {
  * Shrinking the pieces keeps the whole amount visible at once, which is the
  * entire point of showing it.
  */
-function applyDensity(el, total) {
+function applyDensity(el, total, groups = 1, size = 'big') {
+  // Inside an equation three quantities share one panel, and each extra plate
+  // costs its own padding — enough that an answer like 4 x 5 wraps onto a
+  // second line of plates and drops off the bottom of the display. Charging for
+  // the plates keeps it on one line, where a child can actually see it.
+  const small = size === 'small';
+  const weight = small ? total + Math.max(0, groups - 1) * 6 : total;
   let vars = null;
-  if (total > 50) vars = { item: 'clamp(13px, 3.9vw, 20px)', gap: '3px', pad: '4px', group: '6px' };
-  else if (total > 20) vars = { item: 'clamp(16px, 4.8vw, 26px)', gap: '4px', pad: '5px', group: '8px' };
-  else if (total > 10) vars = { item: 'clamp(20px, 5.8vw, 30px)', gap: '5px', pad: '6px', group: '10px' };
+  if (small) {
+    // An equation row starts smaller than a lone quantity, so its ladder has to
+    // start below that too — otherwise a crowded answer ends up drawn *larger*
+    // than the numbers it came from and wraps onto a line nobody can see.
+    if (weight > 50) vars = { item: 'clamp(10px, 2.8vw, 15px)', gap: '2px', pad: '3px', group: '5px' };
+    else if (weight > 20) vars = { item: 'clamp(12px, 3.4vw, 18px)', gap: '3px', pad: '4px', group: '6px' };
+    else if (weight > 10) vars = { item: 'clamp(13px, 3.8vw, 20px)', gap: '3px', pad: '4px', group: '7px' };
+  } else if (weight > 50) vars = { item: 'clamp(13px, 3.9vw, 20px)', gap: '3px', pad: '4px', group: '6px' };
+  else if (weight > 20) vars = { item: 'clamp(16px, 4.8vw, 26px)', gap: '4px', pad: '5px', group: '8px' };
+  else if (weight > 10) vars = { item: 'clamp(20px, 5.8vw, 30px)', gap: '5px', pad: '6px', group: '10px' };
   if (!vars) return;
   el.style.setProperty('--item', vars.item);
   el.style.setProperty('--gap', vars.gap);

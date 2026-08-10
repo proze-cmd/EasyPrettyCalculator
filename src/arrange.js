@@ -122,6 +122,23 @@ export function waysToMake(n) {
   return ways;
 }
 
+/**
+ * Rows for somewhere that can only stack — a bond circle, say — where the
+ * dice patterns don't fit but "never more than five in a row" still holds.
+ * Picks the first split the app already believes in whose groups all fit a
+ * row, so a six lands as 3 and 3 rather than as a line of six.
+ */
+export function rowsFor(n) {
+  const options = decompositionsFor(n).filter((o) => o.every((g) => g <= 5));
+  if (!options.length) return chunkSplit(Math.round(n), 5);
+  // A circle is as tall as it is wide, so the split that reads best is the one
+  // that stays squarest — nine as three rows of three, not five over four.
+  const score = (o) => Math.max(Math.max(...o), o.length);
+  return options.reduce((best, o) =>
+    score(o) < score(best) || (score(o) === score(best) && o.length < best.length) ? o : best
+  );
+}
+
 /** A spoken/readable description of a split, e.g. "5 and 4". */
 export function describeGroups(groups) {
   if (!groups || !groups.length) return '';

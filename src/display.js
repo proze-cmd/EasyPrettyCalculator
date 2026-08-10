@@ -10,7 +10,7 @@
 // child just typed — and taps down into what those symbols mean.
 
 import { state, currentLevel, persist } from './state.js';
-import { OBJECT_THEMES, MAX_DRAWN } from './config.js';
+import { OBJECT_THEMES, MAX_DRAWN, MIN_TOUCH } from './config.js';
 import {
   renderQuantity,
   renderNumeral,
@@ -52,6 +52,40 @@ function viewIsCountable() {
   return COUNTABLE_VIEWS.has(currentView().mode);
 }
 
+/**
+ * Whether one set of things is worth counting by touch — few enough to bother
+ * with, and big enough to aim at. This asks the screen rather than the numbers,
+ * because a crowded equation shrinks its pictures to fit and what was tappable
+ * on a big phone may not be on a small one.
+ */
+function worthCounting(scope) {
+  const items = scope.querySelectorAll(COUNTABLE);
+  if (!items.length || items.length > MAX_DRAWN) return false;
+  // offsetWidth is the laid-out size. getBoundingClientRect would still be
+  // inside pop-in's transform and report something smaller than the truth.
+  return items[0].offsetWidth >= MIN_TOUCH;
+}
+
+/** The sets of things on screen — each equation row on its own (see I10). */
+function countingScopes() {
+  const rows = [...displayEl.querySelectorAll('.equation__row')];
+  const scopes = rows.length ? rows : [displayEl];
+  return scopes.filter((s) => s.querySelectorAll(COUNTABLE).length > 0);
+}
+
+/**
+ * Counting is offered for the whole screen or not at all.
+ *
+ * Judging row by row would let the hint say "touch each one" while a tap on the
+ * crowded answer quietly turned the page — throwing away whatever the child had
+ * already counted. One answer for the screen means the hint is always the truth.
+ */
+function countingOffered() {
+  if (!viewIsCountable()) return false;
+  const scopes = countingScopes();
+  return scopes.length > 0 && scopes.every(worthCounting);
+}
+
 export function initDisplay() {
   displayEl = document.getElementById('display');
   journeyEl = document.getElementById('journey');
@@ -74,22 +108,22 @@ export function initDisplay() {
  * around them moves on to the next way of seeing the number.
  */
 function onDisplayClick(e) {
-  const item = viewIsCountable() ? e.target.closest(COUNTABLE) : null;
+  // Counting one at a time is only a real activity while there are few enough
+  // to bother with, and they are big enough to hit. Otherwise the picture is
+  // there to be seen, not poked, so a tap moves on as it does anywhere else.
+  const item = countingOffered() ? e.target.closest(COUNTABLE) : null;
   if (item) {
-    // Counting one at a time is only a real activity while there are few
-    // enough to bother with. Past that the picture is there to be seen, not
-    // poked, so a tap moves on like anywhere else.
-    if (countScope(item).querySelectorAll(COUNTABLE).length > MAX_DRAWN) {
-      cycleView();
-      return;
-    }
     if (!item.classList.contains('counted')) countOne(item);
     return;
   }
   // A near miss inside a cluster of things is a fumbled tap, not a request to
   // change the picture — changing it would throw away the counting so far.
   // The space outside the clusters, and the dots, still move things on.
-  if (e.target.closest('.grp, .rod, .rodline, .tenframe, .pipgrid, .rows, .way, .ways')) return;
+  //
+  // Only while counting is actually on offer, though: when the hint reads "tap
+  // to see it another way", there is no count to protect and a tap on the
+  // picture has to do what the hint just promised.
+  if (countingOffered() && e.target.closest('.grp, .rod, .rodline, .tenframe, .pipgrid, .rows, .way, .ways')) return;
   cycleView();
 }
 
@@ -144,13 +178,21 @@ function calcParts() {
   return { c, a, b, result: c.result };
 }
 
-/** Addition and subtraction both describe a whole and two parts. */
+/**
+ * Addition and subtraction both describe a whole and two parts.
+ *
+ * Only worth a tap while the parts can still be drawn: once every circle holds
+ * a bare numeral the diagram says nothing the stacked equation didn't already,
+ * and at that size regrouping is the view that actually explains the number.
+ */
 function bondNumbers() {
   const { c, a, b, result } = calcParts();
   if (result === null || a === null || b === null) return null;
-  if (c.op === '+') return { whole: result, partA: a, partB: b };
-  if (c.op === '−' && result >= 0) return { whole: a, partA: result, partB: b };
-  return null;
+  let parts = null;
+  if (c.op === '+') parts = { whole: result, partA: a, partB: b };
+  if (c.op === '−' && result >= 0) parts = { whole: a, partA: result, partB: b };
+  if (!parts) return null;
+  return parts.partA <= 10 && parts.partB <= 10 ? parts : null;
 }
 
 /** Only worth showing when the sum actually crosses ten. */
@@ -406,14 +448,7 @@ function updateHint() {
     return;
   }
 
-  // Each equation row is counted on its own, so judge them separately.
-  const rows = [...displayEl.querySelectorAll('.equation__row')];
-  const scopes = rows.length ? rows : [displayEl];
-  const counts = scopes.map((s) => s.querySelectorAll(COUNTABLE).length).filter((n) => n > 0);
-  const canCount =
-    viewIsCountable() && counts.length > 0 && counts.every((n) => n <= MAX_DRAWN);
-
-  if (canCount) {
+  if (countingOffered()) {
     icons.textContent = `👆 ${material}`;
     text.textContent = 'Touch each one to count it';
   } else {
@@ -610,6 +645,37 @@ function renderCalcMode() {
   }
 
   displayEl.appendChild(table);
+  if (visual) fitEquation();
+}
+
+/**
+ * Shrink a picture-equation until it fits the panel it was given.
+ *
+ * The density ladder guesses from the numbers alone, and on a short screen it
+ * guesses too big: at Level 9 a small phone leaves the display barely 200px,
+ * and three rows of plates want half again as much. An answer a child has to
+ * scroll to find is an answer they will not find, so this measures what the
+ * guess actually produced and steps down until the whole sum is on screen.
+ *
+ * Costs nothing where it already fits — the first check simply returns.
+ */
+function fitEquation() {
+  const steps = [
+    { item: 'clamp(11px, 3vw, 15px)', gap: '2px', pad: '3px', group: '5px' },
+    { item: 'clamp(9px, 2.4vw, 12px)', gap: '2px', pad: '2px', group: '4px' },
+    { item: 'clamp(7px, 2vw, 10px)', gap: '1px', pad: '2px', group: '3px' },
+  ];
+  const rows = displayEl.querySelectorAll('.rep--small');
+  if (!rows.length) return;
+  for (const step of steps) {
+    if (displayEl.scrollHeight <= displayEl.clientHeight + 1) return;
+    rows.forEach((el) => {
+      el.style.setProperty('--item', step.item);
+      el.style.setProperty('--gap', step.gap);
+      el.style.setProperty('--chip-pad', step.pad);
+      el.style.setProperty('--group-gap', step.group);
+    });
+  }
 }
 
 /**

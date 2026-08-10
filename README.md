@@ -60,7 +60,10 @@ Other pedagogy baked in:
   (9 as 5+4, then as 3+3+3) — enough to make the point, not a slideshow.
 - **Part–whole colouring.** In `5 + 4`, the 5 is pink and the 4 is blue — and
   the answer is that same pink 5 beside that same blue 4.
-- **Number bonds.** The whole-and-two-parts diagram from Singapore Math.
+- **Number bonds.** The whole-and-two-parts diagram from Singapore Math — and
+  the circles hold the actual things, not just numerals. The nine on top is
+  drawn as the same pink five and the same blue four sitting in the circles
+  below it, so the parts are visible inside the whole rather than asserted.
 - **Take-away made visible.** In `9 − 4`, the nine is drawn as 5 kept plus
   4 faded and dashed out.
 - **Equal groups.** `3 × 4` is three groups of four, never a flat pile.

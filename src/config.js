@@ -211,3 +211,11 @@ export const CONFETTI = ['🎉', '⭐', '✨', '🎊', '🌟', '💫', '🎈', '
  * tens anyway.
  */
 export const MAX_DRAWN = 20;
+
+/**
+ * The smallest a thing can be drawn and still be worth touching. A crowded
+ * equation shrinks its pictures to fit the panel, and below about this size a
+ * puppy is something to look at rather than something a small finger can aim
+ * at — so counting by touch switches itself off and the hint says so.
+ */
+export const MIN_TOUCH = 15;

@@ -50,10 +50,10 @@ export function sparkle(el, count = 8) {
 export function confetti(amount = 40) {
   const layer = fxLayer();
   if (!layer) return;
-  if (reduceMotion) {
-    // A single gentle burst of stars is enough when motion is reduced.
-    amount = 10;
-  }
+  // Confetti is full-screen motion — exactly what someone asking for less of it
+  // wants gone. Skipping it here also matters because these bits clean
+  // themselves up on animationend, which never arrives if the animation is off.
+  if (reduceMotion) return;
   const w = window.innerWidth;
   for (let i = 0; i < amount; i++) {
     const bit = document.createElement('span');

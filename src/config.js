@@ -169,6 +169,9 @@ export const PART_COLORS_CALM = [
   { solid: '#8d7a9c', soft: 'rgba(141,122,156,0.15)', name: 'heather' },
 ];
 
+// The colour an answer is written in — green for "this is the result".
+export const RESULT_COLOR = { bright: '#0ca678', calm: '#5c8a5e' };
+
 // Little celebration emoji used for confetti bursts.
 export const CONFETTI = ['🎉', '⭐', '✨', '🎊', '🌟', '💫', '🎈', '💖', '🌈'];
 

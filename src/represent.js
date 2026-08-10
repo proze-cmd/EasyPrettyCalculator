@@ -15,6 +15,7 @@ import {
   PART_COLORS,
   PART_COLORS_CALM,
   BEAD_COLORS,
+  RESULT_COLOR,
   MAX_ITEMS,
 } from './config.js';
 import { groupsFor, pipCells, waysToMake } from './arrange.js';
@@ -30,6 +31,9 @@ export function partColors() {
 }
 function numeralStyles() {
   return state.theme === 'calm' ? NUMERAL_STYLES_CALM : NUMERAL_STYLES;
+}
+export function resultColor() {
+  return state.theme === 'calm' ? RESULT_COLOR.calm : RESULT_COLOR.bright;
 }
 
 /**
@@ -60,30 +64,32 @@ export function renderQuantity(n, opts = {}) {
     uniformColor = null,
     removedGroups = null,
     forceChip = false,
+    zeroNote = false,
+    numeralColor = null,
   } = opts;
 
   const value = Math.round(n);
 
   if (!Number.isFinite(value) || value < 0) {
-    return renderNumeral(value, { size, numeralIndex, negative: true });
+    return renderNumeral(value, { size, numeralIndex, negative: true, color: numeralColor });
   }
   // Zero is a quantity too, and a startling one at this age. An empty frame
   // says "none left" in a way the digit on its own never does.
   if (value === 0) {
     return mode === 'numeral'
       ? renderNumeral(0, { size, numeralIndex })
-      : renderEmptyFrame(size);
+      : renderEmptyFrame(size, zeroNote);
   }
   if (value > MAX_ITEMS && mode !== 'numeral') {
     const wrap = shell('rep--numeral', size);
-    wrap.appendChild(numeralSpan(value, numeralIndex, size));
+    wrap.appendChild(numeralSpan(value, numeralIndex, numeralColor));
     wrap.appendChild(note(`that's ${value}! 🤯`));
     return wrap;
   }
 
   switch (mode) {
     case 'numeral':
-      return renderNumeral(value, { size, numeralIndex });
+      return renderNumeral(value, { size, numeralIndex, color: numeralColor });
     case 'tenframe':
       return renderTenFrames(value, size);
     case 'rods':
@@ -121,7 +127,6 @@ function renderGrouped(n, o) {
   // ask for one anyway, even with a single group: it is what ties the pink 5
   // in the answer back to the pink 5 it came from.
   const chip = multi || forceChip;
-  wrap.classList.toggle('rep--multi', multi);
 
   let drawn = 0; // running index, used to stagger the pop-in animation
   list.forEach((count, gi) => {
@@ -244,7 +249,12 @@ function renderTenFrames(n, size) {
   return wrap;
 }
 
-function renderEmptyFrame(size) {
+/**
+ * Zero as a picture. The words are worth saying when zero is the *answer* —
+ * "we took them all away" — but inside an operand row they only clutter a sum
+ * that already reads perfectly well.
+ */
+function renderEmptyFrame(size, withNote) {
   const wrap = shell('rep--tenframe rep--zero', size);
   const frame = document.createElement('div');
   frame.className = 'tenframe';
@@ -254,10 +264,12 @@ function renderEmptyFrame(size) {
     frame.appendChild(cell);
   }
   wrap.appendChild(frame);
-  const label = document.createElement('div');
-  label.className = 'zero-note';
-  label.textContent = 'none left';
-  wrap.appendChild(label);
+  if (withNote) {
+    const label = document.createElement('div');
+    label.className = 'zero-note';
+    label.textContent = 'none left';
+    wrap.appendChild(label);
+  }
   return wrap;
 }
 
@@ -351,6 +363,10 @@ function text(t) {
 function renderRods(n, size) {
   const wrap = shell('rep--rods', size);
   applyDensity(wrap, n);
+  // A rod is one unbroken row, so it is the widest thing the app draws. Inside
+  // an equation on a narrow phone a ten-bar overruns the panel, so the beads
+  // there are sized to fit the row rather than to match the other views.
+  if (size === 'small') wrap.style.setProperty('--item', 'clamp(9px, 3.1vw, 18px)');
 
   // Unlike the other views, a rod is deliberately *not* broken into parts:
   // its whole job is to show how long the number itself is, in the one colour
@@ -449,20 +465,21 @@ export function renderWays(n) {
 // Numeral
 // ---------------------------------------------------------------------------
 
-export function renderNumeral(n, { size = 'big', numeralIndex = 0, negative = false } = {}) {
+export function renderNumeral(n, { size = 'big', numeralIndex = 0, negative = false, color = null } = {}) {
   const wrap = shell('rep--numeral', size);
-  wrap.appendChild(numeralSpan(n, numeralIndex, size));
+  wrap.appendChild(numeralSpan(n, numeralIndex, color));
   if (negative || n < 0) wrap.classList.add('rep--negative');
   return wrap;
 }
 
-function numeralSpan(n, numeralIndex, size) {
+function numeralSpan(n, numeralIndex, color) {
   const styles = numeralStyles();
   const style = styles[numeralIndex % styles.length];
   const span = document.createElement('span');
   span.className = 'numeral';
   span.textContent = String(n);
-  span.style.color = style.fg;
+  // An answer is written in the answer colour; everything else cycles.
+  span.style.color = color || style.fg;
   span.style.background = style.bg;
   return span;
 }

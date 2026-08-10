@@ -100,7 +100,11 @@ export function groupsForProduct(a, b) {
   const count = Math.round(a);
   const per = Math.round(b);
   if (count <= 0 || per <= 0) return [];
-  if (per <= 10 && count * per <= 100) return Array.from({ length: count }, () => per);
+  // Cap the number of groups as well as their size: a hundred plates holding
+  // one thing each is not "equal groups", it's confetti.
+  if (per <= 10 && count <= 10 && count * per <= 100) {
+    return Array.from({ length: count }, () => per);
+  }
   // Fall back to tens if the factors are too large to show as equal groups.
   return chunkSplit(count * per, 10);
 }

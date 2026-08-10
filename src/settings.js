@@ -11,9 +11,11 @@ import { say, cancelSpeech } from './speech.js';
 let overlay, slider, levelValue, levelName, levelBlurb, soundToggle, speechToggle;
 let themeBright, themeCalm;
 let onLevelChange = () => {};
+let onThemeChange = () => {};
 
 export function initSettings(handlers = {}) {
   onLevelChange = handlers.onLevelChange || (() => {});
+  onThemeChange = handlers.onThemeChange || (() => {});
 
   overlay = document.getElementById('settingsOverlay');
   slider = document.getElementById('levelSlider');
@@ -63,22 +65,21 @@ export function initSettings(handlers = {}) {
     else cancelSpeech();
   });
 
-  themeBright.addEventListener('click', () => {
-    setTheme('bright');
+  // The numeral and part colours are inline styles, so a theme change has to
+  // redraw what's on screen — a class swap alone leaves them behind.
+  const pickTheme = (name) => {
+    setTheme(name);
     syncToggles();
     playTap();
-  });
-  themeCalm.addEventListener('click', () => {
-    setTheme('calm');
-    syncToggles();
-    playTap();
-  });
+    onThemeChange();
+  };
+  themeBright.addEventListener('click', () => pickTheme('bright'));
+  themeCalm.addEventListener('click', () => pickTheme('calm'));
 }
 
 function open() {
   overlay.classList.remove('hidden');
   overlay.setAttribute('aria-hidden', 'false');
-  document.body.classList.add('sheet-open');
   slider.value = String(state.levelIndex + 1);
   syncSliderLabels(state.levelIndex);
 }
@@ -86,7 +87,6 @@ function open() {
 function close() {
   overlay.classList.add('hidden');
   overlay.setAttribute('aria-hidden', 'true');
-  document.body.classList.remove('sheet-open');
 }
 
 function syncSliderLabels(idx) {

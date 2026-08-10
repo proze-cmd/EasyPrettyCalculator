@@ -9,7 +9,7 @@
 // calculation levels it starts with the equation as symbols — that's what the
 // child just typed — and taps down into what those symbols mean.
 
-import { state, currentLevel } from './state.js';
+import { state, currentLevel, persist } from './state.js';
 import { OBJECT_THEMES } from './config.js';
 import {
   renderQuantity,
@@ -17,6 +17,7 @@ import {
   renderWays,
   renderMakeTen,
   partColors,
+  resultColor,
 } from './represent.js';
 import { renderBond } from './bond.js';
 import {
@@ -32,10 +33,8 @@ import { say, saySequence } from './speech.js';
 let displayEl;
 let journeyEl;
 
-// How many things the child has touched in the current picture.
-let counted = 0;
-
 const COUNTABLE = '.obj, .dot, .tf-filled, .bead';
+const COUNTED = '.obj.counted, .dot.counted, .tf-filled.counted, .bead.counted';
 
 export function initDisplay() {
   displayEl = document.getElementById('display');
@@ -64,32 +63,51 @@ function onDisplayClick(e) {
     if (!item.classList.contains('counted')) countOne(item);
     return;
   }
+  // A near miss inside a cluster of things is a fumbled tap, not a request to
+  // change the picture — changing it would throw away the counting so far.
+  // The space outside the clusters, and the dots, still move things on.
+  if (e.target.closest('.grp, .rod, .rodline, .tenframe, .pipgrid, .rows, .way, .ways')) return;
   cycleView();
 }
 
-function countables() {
-  return displayEl.querySelectorAll(COUNTABLE);
+/**
+ * Counting belongs to one set of things, not to the screen. In an equation
+ * each row is its own set — counting the five, then the four, then the nine.
+ * Without this the child would count straight across all three rows and be
+ * told nine plus four plus five is eighteen.
+ */
+function countScope(item) {
+  return item.closest('.equation__row') || displayEl;
 }
 
 function countOne(item) {
+  const scope = countScope(item);
+  // pop-in finishes holding its final transform, which would outrank the
+  // counted state's shrink. It has long since played, so let it go.
+  item.classList.remove('pop-in');
   item.classList.add('counted');
-  counted += 1;
   playPop();
 
-  const total = countables().length;
-  if (counted >= total && total > 0) {
-    saySequence([String(counted), `${total} altogether!`]);
-    sparkle(displayEl, 10);
+  const total = scope.querySelectorAll(COUNTABLE).length;
+  const done = scope.querySelectorAll(COUNTED).length;
+
+  if (done >= total && total > 0) {
+    saySequence([String(done), `${total} altogether!`]);
+    sparkle(scope === displayEl ? displayEl : item, 10);
     confetti(18);
-    displayEl.classList.add('all-counted');
+    // An equation row is display:contents and paints nothing, so the "done"
+    // glow goes on the quantity inside it.
+    (scope === displayEl ? displayEl : scope.querySelector('.rep') || scope)
+      .classList.add('all-counted');
   } else {
-    say(String(counted));
+    say(String(done));
   }
 }
 
 function resetCounting() {
-  counted = 0;
-  if (displayEl) displayEl.classList.remove('all-counted');
+  if (!displayEl) return;
+  displayEl.classList.remove('all-counted');
+  displayEl.querySelectorAll('.all-counted').forEach((el) => el.classList.remove('all-counted'));
 }
 
 // ---------------------------------------------------------------------------
@@ -134,7 +152,7 @@ function viewCycle() {
     views.push({ mode: 'tenframe' });
     // The full family of pairs is only legible for small numbers; past ten it
     // would be a wall of strips.
-    if (n <= 10) views.push({ mode: 'ways' });
+    if (n >= 2 && n <= 10) views.push({ mode: 'ways' });
     return views;
   }
 
@@ -171,12 +189,15 @@ function goToView(index) {
   const cycle = viewCycle();
   const next = ((index % cycle.length) + cycle.length) % cycle.length;
 
-  // Coming back around to the start earns a fresh set of objects — unless the
-  // child has chosen their own, in which case it stays as they left it.
-  if (next === 0 && !state.materialPinned) {
+  // Wrapping past the end earns a fresh set of objects — unless the child has
+  // chosen their own, in which case it stays as they left it. Re-selecting the
+  // dot you're already on is not a wrap and shouldn't change anything.
+  const from = state.viewIndex % cycle.length;
+  if (next === 0 && from !== 0 && !state.materialPinned) {
     state.objectThemeIndex = (state.objectThemeIndex + 1) % OBJECT_THEMES.length;
     state.shapeIndex = state.shapeIndex + 1;
     state.numeralStyleIndex = state.numeralStyleIndex + 1;
+    persist();
   }
 
   state.viewIndex = next;
@@ -343,7 +364,11 @@ function renderCalcMode() {
     }
   }
 
-  const visual = view.mode === 'objects' || view.mode === 'dots' || view.mode === 'tenframe';
+  const visual =
+    view.mode === 'objects' ||
+    view.mode === 'dots' ||
+    view.mode === 'tenframe' ||
+    view.mode === 'rods';
   const table = document.createElement('div');
   table.className = 'equation ' + (visual ? 'equation--visual' : 'equation--numeral');
 
@@ -354,15 +379,24 @@ function renderCalcMode() {
   // Is the first row showing a quantity we are about to take from?
   const subtracting = c.op === '−' && result !== null && result >= 0 && b > 0 && a > 0;
 
-  // Row 1 — the first number.
+  // Row 1 — the first number. In subtraction it splits into "what stays" and
+  // "what goes", with the latter faded. Sizes, colours and which part is going
+  // are built together so dropping an empty part can't shift them apart.
+  const topParts = subtracting
+    ? [
+        { size: result, color: colorA, going: false },
+        { size: b, color: colorB, going: true },
+      ].filter((part) => part.size > 0)
+    : null;
+
   table.appendChild(
     row('', a, view, {
-      // In subtraction the child should see the part that leaves: the top row
-      // is split into "what stays" and "what goes", with the latter faded.
-      groups: subtracting ? [result, b].filter((x) => x > 0) : null,
-      groupColors: subtracting ? [colorA, colorB] : null,
-      uniformColor: subtracting ? null : colorA,
-      removedGroups: subtracting && result > 0 ? [1] : subtracting ? [0] : null,
+      groups: topParts ? topParts.map((part) => part.size) : null,
+      groupColors: topParts ? topParts.map((part) => part.color) : null,
+      uniformColor: topParts ? null : colorA,
+      removedGroups: topParts
+        ? topParts.map((part, i) => (part.going ? i : -1)).filter((i) => i >= 0)
+        : null,
     })
   );
 
@@ -431,9 +465,11 @@ function row(sign, value, view, opts = {}, isResult = false) {
       groupColors: opts.groupColors || null,
       uniformColor: opts.uniformColor || null,
       removedGroups: opts.removedGroups || null,
+      zeroNote: isResult,
       // Give each row of a visual equation its own coloured plate so the parts
       // stay traceable from the numbers above into the answer below.
       forceChip: mode === 'objects' || mode === 'dots',
+      numeralColor: isResult ? resultColor() : null,
       ...styleOpts(),
     });
     if (opts.gather) quantity.classList.add('gather');

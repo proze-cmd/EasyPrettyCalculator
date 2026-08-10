@@ -42,7 +42,7 @@ function boot() {
   applyTheme();
   initDisplay();
   initKeypad();
-  initSettings({ onLevelChange });
+  initSettings({ onLevelChange, onThemeChange: () => renderDisplay(false) });
   initMaterials({ onPick: () => renderDisplay(true) });
 
   updateLevelBadge();

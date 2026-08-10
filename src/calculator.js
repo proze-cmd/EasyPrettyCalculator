@@ -212,6 +212,18 @@ function pressDigit(d, btn) {
   refreshKeys();
 }
 
+/** A wobble and a spoken reason — used wherever a press can't be honoured. */
+function refuseSoftly(btn, message) {
+  if (btn) {
+    btn.classList.remove('btn--refused');
+    void btn.offsetWidth;
+    btn.classList.add('btn--refused');
+    btn.addEventListener('animationend', () => btn.classList.remove('btn--refused'), { once: true });
+  }
+  playClear();
+  say(message);
+}
+
 /** A soft "not that one" — a wobble and a reason, never a dead button. */
 function refuse(btn, digit) {
   const c = state.calc;
@@ -235,6 +247,10 @@ export function refreshKeys() {
   keypadEl.querySelectorAll('.btn--num').forEach((b) => {
     const d = Number(b.textContent);
     if (Number.isNaN(d)) return;
+    // Deliberately no ARIA state here. The key is not disabled — it answers,
+    // it just answers "not that one", out loud, the moment it's pressed. A
+    // name that changes underneath you is worse for a screen reader than a
+    // stable one, and aria-disabled would be a lie about a working button.
     b.classList.toggle('btn--muted', digitBlocked(d));
   });
 }
@@ -253,7 +269,11 @@ function pressOp(op, btn) {
     // Continue calculating from the answer.
     state.calc = { a: String(c.result), op, b: '', result: null, phase: 'b' };
   } else if (c.phase === 'a') {
-    if (c.a === '') return; // need a first number
+    if (c.a === '') {
+      // Nothing to operate on yet — say so rather than being a dead button.
+      refuseSoftly(btn, 'Pick a number first');
+      return;
+    }
     c.op = op;
     c.phase = 'b';
   } else if (c.phase === 'b') {
@@ -365,6 +385,18 @@ function backspace(btn) {
 function handlePhysicalKey(e) {
   // Don't hijack typing inside the settings sliders / inputs.
   if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
+
+  // Shortcuts belong to the browser, not the calculator.
+  if (e.metaKey || e.ctrlKey || e.altKey) return;
+
+  // With a sheet open the keys belong to the sheet — otherwise Escape would
+  // close settings and wipe the child's half-built sum on the way out.
+  if (document.querySelector('.overlay:not(.hidden)')) return;
+
+  // Enter and Space are how you press whatever already has focus. Let the
+  // focused control handle them instead of also firing "=" behind its back.
+  const focused = document.activeElement;
+  if ((e.key === 'Enter' || e.key === ' ') && focused && focused !== document.body) return;
 
   const level = currentLevel();
 

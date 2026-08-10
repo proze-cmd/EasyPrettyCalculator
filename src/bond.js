@@ -4,7 +4,8 @@
 // it. It's the clearest way to show that 9 *is* 5 and 4, and that the same
 // three numbers describe both 5 + 4 = 9 and 9 − 4 = 5.
 
-import { partColors } from './represent.js';
+import { partColors, resultColor } from './represent.js';
+import { state } from './state.js';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
 
@@ -55,7 +56,8 @@ export function renderBond(whole, partA, partB) {
     'aria-label': `${whole} is made of ${partA} and ${partB}`,
   });
 
-  const wholeColor = '#0ca678';
+  const wholeColor = resultColor();
+  const branch = state.theme === 'calm' ? '#d3c5b4' : '#c9bcd6';
   const palette = partColors();
   const colorA = palette[0].solid;
   const colorB = palette[1].solid;
@@ -64,13 +66,13 @@ export function renderBond(whole, partA, partB) {
   svg.appendChild(
     node('line', {
       x1: 160, y1: 52, x2: 76, y2: 163,
-      stroke: '#c9bcd6', 'stroke-width': 5, 'stroke-linecap': 'round',
+      stroke: branch, 'stroke-width': 5, 'stroke-linecap': 'round',
     })
   );
   svg.appendChild(
     node('line', {
       x1: 160, y1: 52, x2: 244, y2: 163,
-      stroke: '#c9bcd6', 'stroke-width': 5, 'stroke-linecap': 'round',
+      stroke: branch, 'stroke-width': 5, 'stroke-linecap': 'round',
     })
   );
 

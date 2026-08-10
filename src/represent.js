@@ -435,6 +435,172 @@ export function renderWays(n) {
 }
 
 // ---------------------------------------------------------------------------
+// Regrouping — where a new ten comes from
+// ---------------------------------------------------------------------------
+
+/** A short run of round counters, five to a row, for loose ones. */
+function onesRow(n, color) {
+  const wrap = document.createElement('div');
+  wrap.className = 'ones';
+  for (let i = 0; i < n; i++) {
+    const one = document.createElement('span');
+    one.className = 'one pop-in';
+    one.style.background = color;
+    one.style.animationDelay = Math.min(i * 40, 400) + 'ms';
+    wrap.appendChild(one);
+  }
+  return wrap;
+}
+
+/**
+ * Two-digit addition works because ten loose ones can be traded for a single
+ * ten. That trade is the whole idea, and on paper it is a tiny "1" written
+ * above a column — the one part children copy without understanding. Here the
+ * ten ones are gathered into a frame and handed over as a ten bar.
+ */
+export function renderRegroup(r) {
+  const palette = partColors();
+  const gold = BEAD_COLORS[10].solid;
+  const onesColor = palette[1].solid;
+
+  const wrap = document.createElement('div');
+  wrap.className = 'regroup';
+
+  const lead = document.createElement('div');
+  lead.className = 'regroup__lead';
+  lead.append(
+    strong(r.onesA, onesColor), text(' ones and '), strong(r.onesB, onesColor),
+    text(' ones make '), strong(r.onesSum, null)
+  );
+  wrap.appendChild(lead);
+
+  // Ten of them fill a frame and become a single ten.
+  const trade = document.createElement('div');
+  trade.className = 'regroup__trade';
+
+  const frame = document.createElement('div');
+  frame.className = 'tenframe regroup__frame';
+  for (let i = 0; i < 10; i++) {
+    const cell = document.createElement('span');
+    cell.className = 'tf-cell tf-filled pop-in';
+    cell.style.background = onesColor;
+    cell.style.borderColor = onesColor;
+    cell.style.animationDelay = Math.min(i * 45, 450) + 'ms';
+    frame.appendChild(cell);
+  }
+  trade.appendChild(frame);
+
+  const arrow = document.createElement('span');
+  arrow.className = 'regroup__arrow';
+  arrow.textContent = '↓';
+  trade.appendChild(arrow);
+
+  const newTen = document.createElement('span');
+  newTen.className = 'regroup__newten';
+  for (let i = 0; i < 10; i++) {
+    const bead = document.createElement('span');
+    bead.className = 'bead';
+    bead.style.background = gold;
+    if (i === 5) bead.classList.add('bead--break');
+    newTen.appendChild(bead);
+  }
+  const tenLabel = document.createElement('span');
+  tenLabel.className = 'regroup__tenlabel';
+  tenLabel.textContent = 'a new ten!';
+
+  const swap = document.createElement('div');
+  swap.className = 'regroup__swap';
+  swap.append(newTen, tenLabel);
+  trade.appendChild(swap);
+
+  wrap.appendChild(trade);
+
+  if (r.onesLeft > 0) {
+    const left = document.createElement('div');
+    left.className = 'regroup__left';
+    const cap = document.createElement('span');
+    cap.className = 'regroup__leftcap';
+    cap.append(text('and '), strong(r.onesLeft, onesColor), text(' left over'));
+    left.append(onesRow(r.onesLeft, onesColor), cap);
+    wrap.appendChild(left);
+  }
+
+  const sum = document.createElement('div');
+  sum.className = 'regroup__sum';
+  sum.append(
+    strong(r.tensTotal, gold), text(r.tensTotal === 1 ? ' ten and ' : ' tens and '),
+    strong(r.onesLeft, onesColor), text(r.onesLeft === 1 ? ' one = ' : ' ones = '),
+    strong(r.result, null)
+  );
+  wrap.appendChild(sum);
+
+  return wrap;
+}
+
+// ---------------------------------------------------------------------------
+// Comparison bars — "how many more?"
+// ---------------------------------------------------------------------------
+
+/**
+ * The Singapore bar model for comparison. Two bars lined up from the same edge
+ * turn "nine take away four" into something you can see: the shorter bar plus
+ * the gap is the longer one, and the gap is the answer.
+ */
+export function renderCompare(bigger, smaller, diff) {
+  const palette = partColors();
+  const wrap = document.createElement('div');
+  wrap.className = 'compare';
+
+  const bar = (value, width, cls) => {
+    const rowEl = document.createElement('div');
+    rowEl.className = 'compare__row';
+
+    const num = document.createElement('span');
+    num.className = 'compare__num';
+    num.textContent = String(value);
+    rowEl.appendChild(num);
+
+    const track = document.createElement('div');
+    track.className = 'compare__track';
+    const fill = document.createElement('div');
+    fill.className = 'compare__fill ' + cls;
+    fill.style.width = width + '%';
+    track.appendChild(fill);
+    rowEl.appendChild(track);
+    return { rowEl, track };
+  };
+
+  const top = bar(bigger, 100, 'compare__fill--a');
+  top.rowEl.querySelector('.compare__fill').style.background = palette[0].solid;
+  wrap.appendChild(top.rowEl);
+
+  const pct = bigger > 0 ? (smaller / bigger) * 100 : 0;
+  const bottom = bar(smaller, pct, 'compare__fill--b');
+  bottom.rowEl.querySelector('.compare__fill').style.background = palette[1].solid;
+
+  // The gap between the two bars is the difference — labelled, because that is
+  // the number the child is looking for.
+  const gap = document.createElement('div');
+  gap.className = 'compare__gap';
+  gap.style.width = 100 - pct + '%';
+  const gapLabel = document.createElement('span');
+  gapLabel.textContent = String(diff);
+  gap.appendChild(gapLabel);
+  bottom.track.appendChild(gap);
+  wrap.appendChild(bottom.rowEl);
+
+  const cap = document.createElement('div');
+  cap.className = 'compare__cap';
+  cap.append(
+    strong(bigger, palette[0].solid), text(' is '), strong(diff, null),
+    text(' more than '), strong(smaller, palette[1].solid)
+  );
+  wrap.appendChild(cap);
+
+  return wrap;
+}
+
+// ---------------------------------------------------------------------------
 // Numeral
 // ---------------------------------------------------------------------------
 

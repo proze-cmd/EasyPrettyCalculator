@@ -83,12 +83,22 @@ Other pedagogy baked in:
   underneath says so.
 - **Make a ten.** When an addition crosses ten, `8 + 5` shows the 8 borrowing
   just 2 to fill a ten-frame, leaving 3 — so the child sees `10 + 3`.
+- **Where a new ten comes from.** In `27 + 18`, the ones make 15; ten of them
+  gather into a frame and are handed over as a single gold ten bar, with 5 left
+  over — "4 tens and 5 ones = 45". The carry on paper is a tiny "1" children
+  copy without understanding; here they watch the trade happen.
+- **How many more?** Subtraction also reads as a comparison: two bars from the
+  same edge, the shorter one plus a dashed gap, and the gap labelled with the
+  answer — the Singapore bar model. `9 − 4` becomes "9 is 5 more than 4".
 - **Every level holds its range.** Digits that would take you outside the level
   dim, and pressing one wobbles and says why. You can never take away more than
   you have, so the answer never goes negative.
 - **Zero has a picture** — an empty ten-frame, spoken as "none left".
 - **Pick your own things to count.** Puppies, shells, acorns, rockets — chosen
   materials stay put, or "surprise me" keeps them changing.
+
+See [`TESTING.md`](TESTING.md) for what to check when play-testing, the
+invariants that must never break, and the measurement traps that have fooled us.
 
 ## 📚 Levels
 

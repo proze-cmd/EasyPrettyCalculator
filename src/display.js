@@ -16,6 +16,8 @@ import {
   renderNumeral,
   renderWays,
   renderMakeTen,
+  renderRegroup,
+  renderCompare,
   partColors,
   resultColor,
 } from './represent.js';
@@ -35,6 +37,18 @@ let journeyEl;
 
 const COUNTABLE = '.obj, .tf-filled, .bead';
 const COUNTED = '.obj.counted, .tf-filled.counted, .bead.counted';
+
+/**
+ * Views that are *a quantity* and so can be counted by touching. The others —
+ * make-a-ten, regrouping, the bond, the bar model, the ways — are explanations
+ * that happen to contain circles. Counting the circles in an explanation
+ * teaches nothing and gets in the way of reading it.
+ */
+const COUNTABLE_VIEWS = new Set(['paired', 'objects', 'tenframe', 'rods']);
+
+function viewIsCountable() {
+  return COUNTABLE_VIEWS.has(currentView().mode);
+}
 
 export function initDisplay() {
   displayEl = document.getElementById('display');
@@ -58,7 +72,7 @@ export function initDisplay() {
  * around them moves on to the next way of seeing the number.
  */
 function onDisplayClick(e) {
-  const item = e.target.closest(COUNTABLE);
+  const item = viewIsCountable() ? e.target.closest(COUNTABLE) : null;
   if (item) {
     // Counting one at a time is only a real activity while there are few
     // enough to bother with. Past that the picture is there to be seen, not
@@ -146,6 +160,35 @@ function makeTenNumbers() {
   return { a, b, need: 10 - a, rest: result - 10 };
 }
 
+/**
+ * A carry to show. Only when ten loose ones actually have to be traded for a
+ * ten — and only for two-digit work, since a single-digit crossing is what
+ * make-a-ten already explains.
+ */
+function regroupNumbers() {
+  const { c, a, b, result } = calcParts();
+  if (c.op !== '+' || result === null || a === null || b === null) return null;
+  if (a < 10 && b < 10) return null; // make-a-ten's job
+  if (a <= 0 || b <= 0 || result > 100) return null;
+  const onesA = a % 10;
+  const onesB = b % 10;
+  const onesSum = onesA + onesB;
+  if (onesSum < 10) return null; // nothing was traded
+  return {
+    a, b, result, onesA, onesB, onesSum,
+    onesLeft: onesSum - 10,
+    tensTotal: Math.floor(result / 10),
+  };
+}
+
+/** Subtraction read as a comparison: how much longer is one than the other? */
+function compareNumbers() {
+  const { c, a, b, result } = calcParts();
+  if (c.op !== '−' || result === null || a === null || b === null) return null;
+  if (a <= 0 || b <= 0 || result <= 0) return null;
+  return { bigger: a, smaller: b, diff: result };
+}
+
 /** All the pairs that make the answer — worth showing once it's small enough. */
 function waysNumber() {
   const { c, result } = calcParts();
@@ -180,6 +223,8 @@ function viewCycle() {
   const views = [{ mode: 'numeral' }];
   if (biggest <= MAX_DRAWN) views.push({ mode: 'objects' });
   if (makeTenNumbers()) views.push({ mode: 'maketen' });
+  if (regroupNumbers()) views.push({ mode: 'regroup' });
+  if (compareNumbers()) views.push({ mode: 'compare' });
   if (bondNumbers()) views.push({ mode: 'bond' });
   // The whole family of pairs belongs where a child is actually making sums,
   // not in front of a four-year-old who is still learning what five looks like.
@@ -254,6 +299,22 @@ function narrateView() {
   if (view.mode === 'maketen') {
     const m = makeTenNumbers();
     if (m) say(`${m.a} needs ${m.need} more to make 10. Then ${m.rest} more makes ${10 + m.rest}.`);
+    return;
+  }
+  if (view.mode === 'regroup') {
+    const r = regroupNumbers();
+    if (r) {
+      say(
+        `${r.onesA} ones and ${r.onesB} ones make ${r.onesSum}. ` +
+          `Ten of them make a new ten, with ${r.onesLeft} left over. ` +
+          `${r.tensTotal} tens and ${r.onesLeft} ones is ${r.result}.`
+      );
+    }
+    return;
+  }
+  if (view.mode === 'compare') {
+    const cmp = compareNumbers();
+    if (cmp) say(`${cmp.bigger} is ${cmp.diff} more than ${cmp.smaller}`);
     return;
   }
   const bond = bondNumbers();
@@ -334,7 +395,8 @@ function updateHint() {
   const rows = [...displayEl.querySelectorAll('.equation__row')];
   const scopes = rows.length ? rows : [displayEl];
   const counts = scopes.map((s) => s.querySelectorAll(COUNTABLE).length).filter((n) => n > 0);
-  const canCount = counts.length > 0 && counts.every((n) => n <= MAX_DRAWN);
+  const canCount =
+    viewIsCountable() && counts.length > 0 && counts.every((n) => n <= MAX_DRAWN);
 
   if (canCount) {
     icons.textContent = `👆 ${material}`;
@@ -436,6 +498,22 @@ function renderCalcMode() {
     const m = makeTenNumbers();
     if (m) {
       displayEl.appendChild(renderMakeTen(m.a, m.b, m.need, m.rest));
+      return;
+    }
+  }
+
+  if (view.mode === 'regroup') {
+    const r = regroupNumbers();
+    if (r) {
+      displayEl.appendChild(renderRegroup(r));
+      return;
+    }
+  }
+
+  if (view.mode === 'compare') {
+    const cmp = compareNumbers();
+    if (cmp) {
+      displayEl.appendChild(renderCompare(cmp.bigger, cmp.smaller, cmp.diff));
       return;
     }
   }

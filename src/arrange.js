@@ -105,6 +105,19 @@ export function groupsForProduct(a, b) {
   return chunkSplit(count * per, 10);
 }
 
+/**
+ * Every pair of parts that makes `n` — 1 and 8, 2 and 7, 3 and 6 …
+ * Seeing the whole family at once is how children come to know that as one
+ * part grows the other shrinks, and it's the groundwork for recalling number
+ * facts rather than recomputing them.
+ */
+export function waysToMake(n) {
+  const v = Math.round(n);
+  const ways = [];
+  for (let a = 1; a < v; a++) ways.push([a, v - a]);
+  return ways;
+}
+
 /** A spoken/readable description of a split, e.g. "5 and 4". */
 export function describeGroups(groups) {
   if (!groups || !groups.length) return '';

@@ -155,7 +155,11 @@ body.ready {
   align-items: center;
   justify-content: center;
   padding: 16px;
-  overflow: auto;
+  /* Tall content (all the ways to make a number) may scroll; sideways it never
+     should. The pop-in animation briefly scales past the edge, and without
+     this that overshoot shows up as a horizontal scrollbar flicker. */
+  overflow-x: hidden;
+  overflow-y: auto;
   cursor: default;
   position: relative;
 }
@@ -189,8 +193,19 @@ body.has-interacted .display.tappable::after {
   margin: 0;
   text-align: center;
   color: var(--ink-soft);
-  font-size: 13px;
   min-height: 1.2em;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+}
+.tap-hint__icons {
+  font-size: 17px;
+  letter-spacing: 2px;
+}
+.tap-hint__text {
+  font-size: 12px;
+  opacity: 0.85;
 }
 body.has-interacted .tap-hint {
   opacity: 0.55;
@@ -307,6 +322,77 @@ body.has-interacted .tap-hint {
 }
 .dot {
   filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.12));
+}
+
+/* Bead bars / number rods — colour and length both carry the quantity */
+.rep--rods {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: calc(var(--gap) + 4px);
+}
+.rodline {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.rod {
+  display: flex;
+  gap: 2px;
+  padding: 3px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.04);
+}
+.bead {
+  width: var(--item);
+  height: var(--item);
+  border-radius: 50%;
+  display: block;
+  box-shadow: inset 0 -2px 3px rgba(0, 0, 0, 0.18);
+}
+/* Keeps "five and some more" visible inside a longer bar. */
+.bead--break {
+  margin-left: calc(var(--gap) + 3px);
+}
+.rod__label {
+  font-weight: 800;
+  font-size: calc(var(--item) * 0.9);
+  min-width: 1.2em;
+}
+
+/* All the ways to make a number */
+.ways {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 0;
+}
+.ways__title {
+  font-weight: 800;
+  font-size: clamp(18px, 5vw, 24px);
+  color: var(--ink-soft);
+  margin-bottom: 2px;
+}
+.way {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.way__strip {
+  display: flex;
+  gap: 2px;
+}
+.way__cell {
+  width: clamp(13px, 4vw, 20px);
+  height: clamp(13px, 4vw, 20px);
+  border-radius: 5px;
+  display: block;
+}
+.way__label {
+  font-weight: 800;
+  font-size: clamp(13px, 3.6vw, 17px);
+  color: var(--ink-soft);
+  min-width: 4.2em;
 }
 
 /* Numeral paired with the quantity it names */
@@ -674,6 +760,32 @@ body.has-interacted .tap-hint {
   transform: translateX(28px);
 }
 
+.segmented {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.segmented__btn {
+  border: 3px solid #ffe0ef;
+  background: #fff;
+  border-radius: 16px;
+  padding: 12px 8px;
+  font-family: inherit;
+  font-weight: 800;
+  font-size: 15px;
+  color: var(--ink-soft);
+  cursor: pointer;
+  transition: transform 0.1s ease, border-color 0.15s ease, color 0.15s ease;
+}
+.segmented__btn:active {
+  transform: scale(0.97);
+}
+.segmented__btn.on {
+  border-color: #ff6b9d;
+  color: #ff4d94;
+  background: #fff5fa;
+}
+
 .sheet__footnote {
   text-align: center;
   color: var(--ink-soft);
@@ -684,6 +796,94 @@ body.has-interacted .tap-hint {
 .hidden {
   /* handled with opacity for the overlay; keep as a safety net */
 }
+
+/* --- Calm theme ---------------------------------------------------------
+   A softer, warmer alternative to the candy palette — closer to the muted
+   watercolour tones of a Waldorf or Reggio classroom, for children who find
+   the bright version over-stimulating (and for quiet evenings).
+   ------------------------------------------------------------------------ */
+
+body.theme-calm {
+  --bg-1: #f7efe3;
+  --bg-2: #e9efe6;
+  --bg-3: #f6e8e2;
+  --ink: #5a4a3f;
+  --ink-soft: #97887c;
+  --panel: #fffdf9;
+  --panel-edge: #e7d8c4;
+  --shadow-soft: 0 10px 24px rgba(140, 115, 90, 0.16);
+}
+
+body.theme-calm .title {
+  color: #c26b56;
+  text-shadow: 0 2px 0 #fff, 0 3px 6px rgba(194, 107, 86, 0.18);
+}
+body.theme-calm .level-badge__num,
+body.theme-calm .setting__level-name,
+body.theme-calm .setting__value,
+body.theme-calm .equation__sign {
+  color: #8a6a53;
+}
+body.theme-calm .sheet {
+  background: linear-gradient(180deg, #fffdf9, #f7f1e8);
+}
+body.theme-calm .sheet__title {
+  color: #c26b56;
+}
+body.theme-calm .setting {
+  border-top-color: #ece0cf;
+}
+body.theme-calm .setting__level-card,
+body.theme-calm .segmented__btn {
+  border-color: #ece0cf;
+}
+body.theme-calm .segmented__btn.on {
+  border-color: #c9a37f;
+  color: #a5714f;
+  background: #fdf6ec;
+}
+body.theme-calm .slider {
+  background: linear-gradient(90deg, #e8d3ae, #d8a98c, #a8917e);
+}
+body.theme-calm .slider::-webkit-slider-thumb {
+  border-color: #c9a37f;
+}
+body.theme-calm .slider::-moz-range-thumb {
+  border-color: #c9a37f;
+}
+body.theme-calm .toggle.on {
+  background: #a3bf94;
+}
+body.theme-calm .equation__line {
+  background: linear-gradient(90deg, #dcc39a, #c9a37f);
+}
+body.theme-calm .equation__row--result .equation__sign,
+body.theme-calm .equation__row--result .numeral {
+  color: #5c8a5e;
+}
+body.theme-calm .tenframe {
+  border-color: #d6c6ae;
+}
+body.theme-calm .tf-cell {
+  border-color: #e8dcc8;
+}
+body.theme-calm .tf-filled {
+  background: radial-gradient(circle at 40% 35%, #e0b49c, #c98c6e);
+  border-color: #c98c6e;
+}
+
+/* Muted button set */
+body.theme-calm .btn-pink   { background: linear-gradient(180deg,#f0d5d0,#e0b4ab); box-shadow:0 6px 0 #c19288; color:#6b453c; }
+body.theme-calm .btn-orange { background: linear-gradient(180deg,#f2e2c8,#e5cba4); box-shadow:0 6px 0 #c4a578; color:#6b5334; }
+body.theme-calm .btn-yellow { background: linear-gradient(180deg,#f4ecd0,#e6d9a8); box-shadow:0 6px 0 #c5b57e; color:#645933; }
+body.theme-calm .btn-green  { background: linear-gradient(180deg,#dbe7d3,#bfd3b2); box-shadow:0 6px 0 #94ab86; color:#42553a; }
+body.theme-calm .btn-blue   { background: linear-gradient(180deg,#d6e2e8,#b6cbd6); box-shadow:0 6px 0 #8aa5b2; color:#3b5058; }
+body.theme-calm .btn-purple { background: linear-gradient(180deg,#e2dae6,#c8bcd2); box-shadow:0 6px 0 #9d8fac; color:#4e4159; }
+body.theme-calm .btn-digit  { background: linear-gradient(180deg,#fffdf8,#f0eade); box-shadow:0 6px 0 #cfc4b0; color:#5a4a3f; }
+body.theme-calm .btn-op     { background: linear-gradient(180deg,#f2e2c8,#e2c49b); box-shadow:0 6px 0 #c09a6e; color:#6b5334; }
+body.theme-calm .btn-equals { background: linear-gradient(180deg,#cfe0c4,#a9c79b); box-shadow:0 6px 0 #7f9f71; color:#3c5434; }
+body.theme-calm .btn-clear  { background: linear-gradient(180deg,#eed6d0,#dcb2a8); box-shadow:0 6px 0 #bb8b80; color:#6b403a; }
+body.theme-calm .btn-back   { background: linear-gradient(180deg,#eae5db,#d3ccbf); box-shadow:0 6px 0 #aca493; color:#5a5245; }
 
 /* --- Animations --------------------------------------------------------- */
 

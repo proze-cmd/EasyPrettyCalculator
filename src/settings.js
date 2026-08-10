@@ -4,11 +4,12 @@
 // the calculator.
 
 import { LEVELS } from './config.js';
-import { state, setLevel, setSound, setSpeech } from './state.js';
+import { state, setLevel, setSound, setSpeech, setTheme } from './state.js';
 import { playTap } from './sound.js';
 import { say, cancelSpeech } from './speech.js';
 
 let overlay, slider, levelValue, levelName, levelBlurb, soundToggle, speechToggle;
+let themeBright, themeCalm;
 let onLevelChange = () => {};
 
 export function initSettings(handlers = {}) {
@@ -21,6 +22,8 @@ export function initSettings(handlers = {}) {
   levelBlurb = document.getElementById('levelSliderBlurb');
   soundToggle = document.getElementById('soundToggle');
   speechToggle = document.getElementById('speechToggle');
+  themeBright = document.getElementById('themeBright');
+  themeCalm = document.getElementById('themeCalm');
 
   slider.min = '1';
   slider.max = String(LEVELS.length);
@@ -59,6 +62,17 @@ export function initSettings(handlers = {}) {
     if (state.speechOn) say('Hello!');
     else cancelSpeech();
   });
+
+  themeBright.addEventListener('click', () => {
+    setTheme('bright');
+    syncToggles();
+    playTap();
+  });
+  themeCalm.addEventListener('click', () => {
+    setTheme('calm');
+    syncToggles();
+    playTap();
+  });
 }
 
 function open() {
@@ -87,4 +101,10 @@ function syncToggles() {
   soundToggle.classList.toggle('on', state.soundOn);
   speechToggle.setAttribute('aria-checked', state.speechOn ? 'true' : 'false');
   speechToggle.classList.toggle('on', state.speechOn);
+
+  const calm = state.theme === 'calm';
+  themeCalm.classList.toggle('on', calm);
+  themeBright.classList.toggle('on', !calm);
+  themeCalm.setAttribute('aria-checked', calm ? 'true' : 'false');
+  themeBright.setAttribute('aria-checked', calm ? 'false' : 'true');
 }

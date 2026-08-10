@@ -34,7 +34,10 @@
         aria-label="Number display. Tap to see it a fun new way."
       ></div>
 
-      <p id="tapHint" class="tap-hint">Tap the number to see it a fun new way! 👆</p>
+      <p id="tapHint" class="tap-hint">
+        <span class="tap-hint__icons" aria-hidden="true">👆 ✨ 🐰</span>
+        <span class="tap-hint__text">Tap it to see it a new way</span>
+      </p>
     </main>
 
     <div id="keypad" class="keypad" role="group" aria-label="Calculator buttons"></div>
@@ -86,6 +89,20 @@
         <button id="speechToggle" class="toggle" role="switch" aria-checked="true">
           <span class="toggle__dot"></span>
         </button>
+      </section>
+
+      <section class="setting">
+        <div class="setting__label">
+          <span class="setting__name">🎨 Colors</span>
+        </div>
+        <div class="segmented" role="radiogroup" aria-label="Color theme">
+          <button id="themeBright" class="segmented__btn" role="radio" aria-checked="true">
+            🌈 Bright
+          </button>
+          <button id="themeCalm" class="segmented__btn" role="radio" aria-checked="false">
+            🍃 Calm
+          </button>
+        </div>
       </section>
 
       <p class="sheet__footnote">Made with 💗 for little mathematicians.</p>

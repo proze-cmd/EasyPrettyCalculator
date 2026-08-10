@@ -109,6 +109,25 @@ export const OBJECT_THEMES = [
   { name: 'rockets', emoji: '🚀' },
 ];
 
+/**
+ * The Montessori bead-stair colours. In a Montessori classroom every quantity
+ * has its own colour — a five is always light blue, a three is always pink —
+ * so the colour itself comes to mean the number, long before the numeral does.
+ * Drawn as bars, they also make size visible: nine is plainly longer than four.
+ */
+export const BEAD_COLORS = {
+  1: { solid: '#e03131', name: 'red' },
+  2: { solid: '#2f9e44', name: 'green' },
+  3: { solid: '#f06595', name: 'pink' },
+  4: { solid: '#fab005', name: 'yellow' },
+  5: { solid: '#74c0fc', name: 'light blue' },
+  6: { solid: '#9775fa', name: 'purple' },
+  7: { solid: '#f8f9fa', stroke: '#adb5bd', name: 'white' },
+  8: { solid: '#a1622f', name: 'brown' },
+  9: { solid: '#1864ab', name: 'dark blue' },
+  10: { solid: '#e8a90c', name: 'gold' },
+};
+
 // Colored "dot" shapes cycle through these shapes for variety.
 export const DOT_SHAPES = ['circle', 'star', 'heart', 'square'];
 
@@ -129,6 +148,25 @@ export const NUMERAL_STYLES = [
   { fg: '#0ca678', bg: 'linear-gradient(135deg,#e6fcf5,#c3fae8)' },
   { fg: '#f76707', bg: 'linear-gradient(135deg,#fff4e6,#ffd8a8)' },
   { fg: '#1c7ed6', bg: 'linear-gradient(135deg,#e7f5ff,#a5d8ff)' },
+];
+
+// Muted equivalents for the calm theme. These are set as inline styles from
+// JavaScript, so unlike everything else they can't be swapped by a CSS class —
+// they have to be chosen at draw time.
+export const NUMERAL_STYLES_CALM = [
+  { fg: '#b5654e', bg: 'linear-gradient(135deg,#fdf3ec,#f2ddcf)' },
+  { fg: '#6f7f5c', bg: 'linear-gradient(135deg,#f1f4ec,#dde5d2)' },
+  { fg: '#7b6a8d', bg: 'linear-gradient(135deg,#f3f0f6,#e0d8e8)' },
+  { fg: '#a5824a', bg: 'linear-gradient(135deg,#faf3e4,#ecdcbd)' },
+  { fg: '#5b7f8a', bg: 'linear-gradient(135deg,#eef4f6,#d5e4e9)' },
+];
+
+export const PART_COLORS_CALM = [
+  { solid: '#c2705a', soft: 'rgba(194,112,90,0.15)', name: 'terracotta' },
+  { solid: '#6f8f9e', soft: 'rgba(111,143,158,0.15)', name: 'dusty blue' },
+  { solid: '#7f9668', soft: 'rgba(127,150,104,0.16)', name: 'sage' },
+  { solid: '#c2a05a', soft: 'rgba(194,160,90,0.16)', name: 'honey' },
+  { solid: '#8d7a9c', soft: 'rgba(141,122,156,0.15)', name: 'heather' },
 ];
 
 // Little celebration emoji used for confetti bursts.

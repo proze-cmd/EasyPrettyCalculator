@@ -23,6 +23,7 @@ export const state = {
   levelIndex: clampLevel(saved.levelIndex ?? 0), // 0-based index into LEVELS
   soundOn: saved.soundOn !== undefined ? !!saved.soundOn : true,
   speechOn: saved.speechOn !== undefined ? !!saved.speechOn : true,
+  theme: saved.theme === 'calm' ? 'calm' : 'bright',
 
   // --- live calculator state (not persisted) ---
   // For "count" mode: just the currently shown value (or null = empty).
@@ -77,6 +78,17 @@ export function setSpeech(on) {
   persist();
 }
 
+export function setTheme(name) {
+  state.theme = name === 'calm' ? 'calm' : 'bright';
+  applyTheme();
+  persist();
+}
+
+/** Themes are just a class on <body> that swaps the colour variables. */
+export function applyTheme() {
+  document.body.classList.toggle('theme-calm', state.theme === 'calm');
+}
+
 /** New content always starts at the beginning of the view journey. */
 export function resetView() {
   state.viewIndex = 0;
@@ -90,6 +102,7 @@ export function persist() {
         levelIndex: state.levelIndex,
         soundOn: state.soundOn,
         speechOn: state.speechOn,
+        theme: state.theme,
       })
     );
   } catch {

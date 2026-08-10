@@ -2,7 +2,7 @@
 // Boots the app: wires the display, keypad, and settings together and keeps the
 // level badge in sync.
 
-import { state, currentLevel } from './state.js';
+import { state, currentLevel, applyTheme } from './state.js';
 import { initDisplay, renderDisplay } from './display.js';
 import { initKeypad, rebuildKeypad } from './calculator.js';
 import { initSettings } from './settings.js';
@@ -21,16 +21,23 @@ function onLevelChange() {
   updateTapHint();
 }
 
+// The icons carry the message for children who aren't reading yet; the words
+// underneath are really for the grown-up sitting next to them.
 function updateTapHint() {
-  const hint = document.getElementById('tapHint');
   const lvl = currentLevel();
-  hint.textContent =
-    lvl.mode === 'count'
-      ? 'Tap the number to see it a fun new way! 👆'
-      : 'Build a problem, then tap it to see it a fun new way! 👆';
+  const icons = document.querySelector('#tapHint .tap-hint__icons');
+  const text = document.querySelector('#tapHint .tap-hint__text');
+  if (lvl.mode === 'count') {
+    icons.textContent = '👆 ✨ 🐰';
+    text.textContent = 'Tap it to see it a new way';
+  } else {
+    icons.textContent = '🔢 👆 ✨';
+    text.textContent = 'Build a problem, then tap it';
+  }
 }
 
 function boot() {
+  applyTheme();
   initDisplay();
   initKeypad();
   initSettings({ onLevelChange });

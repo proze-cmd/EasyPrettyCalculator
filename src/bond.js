@@ -4,7 +4,7 @@
 // it. It's the clearest way to show that 9 *is* 5 and 4, and that the same
 // three numbers describe both 5 + 4 = 9 and 9 − 4 = 5.
 
-import { PART_COLORS } from './config.js';
+import { partColors } from './represent.js';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
 
@@ -56,8 +56,9 @@ export function renderBond(whole, partA, partB) {
   });
 
   const wholeColor = '#0ca678';
-  const colorA = PART_COLORS[0].solid;
-  const colorB = PART_COLORS[1].solid;
+  const palette = partColors();
+  const colorA = palette[0].solid;
+  const colorB = palette[1].solid;
 
   // Branches first so the circles paint over their ends.
   svg.appendChild(

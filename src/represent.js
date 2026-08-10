@@ -11,10 +11,26 @@ import {
   OBJECT_THEMES,
   DOT_SHAPES,
   NUMERAL_STYLES,
+  NUMERAL_STYLES_CALM,
   PART_COLORS,
+  PART_COLORS_CALM,
+  BEAD_COLORS,
   MAX_ITEMS,
 } from './config.js';
-import { groupsFor, pipCells } from './arrange.js';
+import { groupsFor, pipCells, waysToMake } from './arrange.js';
+import { state } from './state.js';
+
+/**
+ * Colours that live in JavaScript rather than CSS have to be picked per theme
+ * at draw time. The Montessori bead colours are deliberately *not* themed —
+ * they're a fixed language where the colour is the number.
+ */
+export function partColors() {
+  return state.theme === 'calm' ? PART_COLORS_CALM : PART_COLORS;
+}
+function numeralStyles() {
+  return state.theme === 'calm' ? NUMERAL_STYLES_CALM : NUMERAL_STYLES;
+}
 
 /**
  * Render a quantity.
@@ -63,6 +79,8 @@ export function renderQuantity(n, opts = {}) {
       return renderNumeral(value, { size, numeralIndex });
     case 'tenframe':
       return renderTenFrames(value, size);
+    case 'rods':
+      return renderRods(value, size);
     case 'dots':
     case 'objects':
     default:
@@ -99,7 +117,8 @@ function renderGrouped(n, o) {
 
   let drawn = 0; // running index, used to stagger the pop-in animation
   list.forEach((count, gi) => {
-    const color = (groupColors && groupColors[gi]) || PART_COLORS[gi % PART_COLORS.length];
+    const palette = partColors();
+    const color = (groupColors && groupColors[gi]) || palette[gi % palette.length];
     const grp = document.createElement('div');
     grp.className = 'grp';
     if (chip) {
@@ -217,6 +236,107 @@ function renderTenFrames(n, size) {
 }
 
 // ---------------------------------------------------------------------------
+// Bead bars / number rods — quantity as colour and as length
+// ---------------------------------------------------------------------------
+
+function renderRods(n, size) {
+  const wrap = shell('rep--rods', size);
+  applyDensity(wrap, n);
+
+  // Unlike the other views, a rod is deliberately *not* broken into parts:
+  // its whole job is to show how long the number itself is, in the one colour
+  // that belongs to it. Past ten it becomes ten-bars plus a remainder, which
+  // is how the golden bead material handles bigger numbers.
+  const list = n <= 10 ? [n] : groupsFor(n, 0);
+  let drawn = 0;
+
+  list.forEach((count) => {
+    const line = document.createElement('div');
+    line.className = 'rodline';
+
+    const bar = document.createElement('div');
+    bar.className = 'rod';
+    const color = BEAD_COLORS[count] || BEAD_COLORS[10];
+
+    for (let i = 0; i < count; i++) {
+      const bead = document.createElement('span');
+      bead.className = 'bead pop-in';
+      bead.style.background = color.solid;
+      if (color.stroke) bead.style.boxShadow = `inset 0 0 0 2px ${color.stroke}`;
+      // A small break after the fifth bead keeps the five-benchmark readable
+      // even in a bar, so a seven still looks like "five and two".
+      if (i === 5) bead.classList.add('bead--break');
+      bead.style.animationDelay = Math.min((drawn + i) * 32, 760) + 'ms';
+      bar.appendChild(bead);
+    }
+    drawn += count;
+    line.appendChild(bar);
+
+    // Montessori always pairs the material with its numeral.
+    const label = document.createElement('span');
+    label.className = 'rod__label';
+    label.textContent = String(count);
+    label.style.color = color.stroke || color.solid;
+    line.appendChild(label);
+
+    wrap.appendChild(line);
+  });
+
+  return wrap;
+}
+
+// ---------------------------------------------------------------------------
+// "Ways to make N" — the whole family of number pairs at once
+// ---------------------------------------------------------------------------
+
+export function renderWays(n) {
+  const wrap = document.createElement('div');
+  wrap.className = 'ways';
+
+  const title = document.createElement('div');
+  title.className = 'ways__title';
+  title.textContent = `${n} is…`;
+  wrap.appendChild(title);
+
+  const palette = partColors();
+  const colorA = palette[0].solid;
+  const colorB = palette[1].solid;
+
+  waysToMake(n).forEach(([a, b], row) => {
+    const way = document.createElement('div');
+    way.className = 'way';
+
+    // One strip per way: the first part in one colour, the rest in the other.
+    // Stacked up they show one part growing as the other shrinks.
+    const strip = document.createElement('span');
+    strip.className = 'way__strip';
+    for (let i = 0; i < n; i++) {
+      const cell = document.createElement('span');
+      cell.className = 'way__cell pop-in';
+      cell.style.background = i < a ? colorA : colorB;
+      cell.style.animationDelay = Math.min(row * 40 + i * 12, 700) + 'ms';
+      strip.appendChild(cell);
+    }
+    way.appendChild(strip);
+
+    const label = document.createElement('span');
+    label.className = 'way__label';
+    const sa = document.createElement('b');
+    sa.textContent = String(a);
+    sa.style.color = colorA;
+    const sb = document.createElement('b');
+    sb.textContent = String(b);
+    sb.style.color = colorB;
+    label.append(sa, document.createTextNode(' + '), sb);
+    way.appendChild(label);
+
+    wrap.appendChild(way);
+  });
+
+  return wrap;
+}
+
+// ---------------------------------------------------------------------------
 // Numeral
 // ---------------------------------------------------------------------------
 
@@ -228,7 +348,8 @@ export function renderNumeral(n, { size = 'big', numeralIndex = 0, negative = fa
 }
 
 function numeralSpan(n, numeralIndex, size) {
-  const style = NUMERAL_STYLES[numeralIndex % NUMERAL_STYLES.length];
+  const styles = numeralStyles();
+  const style = styles[numeralIndex % styles.length];
   const span = document.createElement('span');
   span.className = 'numeral';
   span.textContent = String(n);

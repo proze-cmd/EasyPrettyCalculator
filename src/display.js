@@ -9,8 +9,8 @@
 // child just typed — and taps down into what those symbols mean.
 
 import { state, currentLevel } from './state.js';
-import { OBJECT_THEMES, PART_COLORS } from './config.js';
-import { renderQuantity, renderNumeral } from './represent.js';
+import { OBJECT_THEMES } from './config.js';
+import { renderQuantity, renderNumeral, renderWays, partColors } from './represent.js';
 import { renderBond } from './bond.js';
 import {
   groupsFor,
@@ -64,11 +64,15 @@ function viewCycle() {
     const alts = Math.min(decompositionCount(n), 3);
     for (let i = 0; i < alts; i++) views.push({ mode: 'objects', decomp: i });
     views.push({ mode: 'dots', decomp: 0 });
+    views.push({ mode: 'rods' });
     views.push({ mode: 'tenframe' });
+    // The full family of pairs is only legible for small numbers; past ten it
+    // would be a wall of strips.
+    if (n <= 10) views.push({ mode: 'ways' });
     return views;
   }
 
-  const views = [{ mode: 'numeral' }, { mode: 'objects' }, { mode: 'dots' }];
+  const views = [{ mode: 'numeral' }, { mode: 'objects' }, { mode: 'dots' }, { mode: 'rods' }];
   if (bondNumbers()) views.push({ mode: 'bond' });
   views.push({ mode: 'tenframe' });
   return views;
@@ -116,7 +120,9 @@ function narrateView() {
 
   if (level.mode === 'count') {
     const n = state.countValue;
-    if (view.mode === 'objects' || view.mode === 'dots') {
+    if (view.mode === 'ways') {
+      say(`Here are all the ways to make ${n}`);
+    } else if (view.mode === 'objects' || view.mode === 'dots' || view.mode === 'rods') {
       const groups = groupsFor(n, view.decomp || 0);
       say(groups.length > 1 ? `${describeGroups(groups)}. That's ${n}.` : String(n));
     } else {
@@ -179,6 +185,11 @@ function renderCountMode() {
 
   const view = currentView();
 
+  if (view.mode === 'ways') {
+    displayEl.appendChild(renderWays(n));
+    return;
+  }
+
   if (view.mode === 'paired') {
     // Numeral and quantity side by side: "this symbol means this many".
     const wrap = document.createElement('div');
@@ -230,8 +241,9 @@ function renderCalcMode() {
   const table = document.createElement('div');
   table.className = 'equation ' + (visual ? 'equation--visual' : 'equation--numeral');
 
-  const colorA = PART_COLORS[0];
-  const colorB = PART_COLORS[1];
+  const palette = partColors();
+  const colorA = palette[0];
+  const colorB = palette[1];
 
   // Is the first row showing a quantity we are about to take from?
   const subtracting = c.op === '−' && result !== null && result >= 0 && b > 0 && a > 0;
@@ -269,8 +281,9 @@ function renderCalcMode() {
  * visible inside the total. Multiplication draws equal groups instead.
  */
 function resultOptions(c, a, b, result) {
-  const colorA = PART_COLORS[0];
-  const colorB = PART_COLORS[1];
+  const palette = partColors();
+  const colorA = palette[0];
+  const colorB = palette[1];
 
   if (result === null) return {};
 
@@ -279,7 +292,7 @@ function resultOptions(c, a, b, result) {
   }
   if (c.op === '×' && a > 0 && b > 0) {
     const groups = groupsForProduct(a, b);
-    return { groups, groupColors: groups.map((_, i) => PART_COLORS[i % PART_COLORS.length]) };
+    return { groups, groupColors: groups.map((_, i) => palette[i % palette.length]) };
   }
   return { groupColors: mono(colorA, 8) };
 }

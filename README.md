@@ -60,6 +60,15 @@ Other pedagogy baked in:
 - **Equal groups.** `3 × 4` is three groups of four, never a flat pile.
 - **Counting aloud** with rhythm, and **natural "loose parts"** (acorns, shells,
   leaves) alongside the cartoon animals.
+- **Bead bars / number rods.** Each number gets its own Montessori colour — a
+  five is always light blue, a nine always dark blue — drawn as a bar whose
+  *length* is the number, so nine is visibly longer than four. In an equation
+  the two addend bars laid against the answer bar show the sum as length.
+- **All the ways to make a number.** Tap far enough on a number up to ten and
+  it shows the whole family of pairs at once (1+8, 2+7, 3+6 …) as stacked
+  two-colour strips; as one part grows the other shrinks, in a staircase.
+- **Two colour worlds.** A **Bright** candy palette and a **Calm** one in muted
+  watercolour tones, for children who find the bright version busy.
 
 ## 📚 Levels
 
@@ -91,7 +100,7 @@ npm run dev
 
 ```
 index.html          # app shell
-styles.css          # all styling + animations (single bright theme)
+styles.css          # all styling, animations, and the bright/calm themes
 src/
   config.js         # LEVELS, emoji themes, palettes  ← tweak content here
   arrange.js        # the grouping engine: how a number splits into groups (pure logic)
@@ -99,11 +108,11 @@ src/
   sound.js          # Web Audio blips (no audio files)
   speech.js         # spoken narration via the Web Speech API (no audio files)
   animate.js        # pop / sparkle / confetti
-  represent.js      # draws a number as structured groups / ten-frame / numeral
+  represent.js      # draws a number as groups / rods / ten-frame / numeral / all-the-ways
   bond.js           # the part-part-whole number bond diagram
   display.js        # the tap-through view journey + stacked equations
   calculator.js     # builds the keypad + all input handling / math
-  settings.js       # settings sheet (level slider + sound/narration toggles)
+  settings.js       # settings sheet (level slider, sound/narration, colour theme)
   main.js           # wires it all together
 scripts/
   serve.mjs         # zero-dep dev server

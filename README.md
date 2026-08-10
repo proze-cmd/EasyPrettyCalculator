@@ -16,11 +16,11 @@ with Capacitor** later.
 - **Adjustable complexity by level** via a slider in **Settings** (⚙️).
 - **Quantities are always shown in structured groups** — never a long line to
   count one-by-one. See [How numbers are drawn](#-how-numbers-are-drawn).
-- **Tap the display to transform it** — each tap shows the same amount a new way:
-  the numeral paired with its quantity, different ways to split it apart
-  (9 as 5+4, as 3+3+3, as 6+3), colored shapes, bead bars, and ten-frames.
-  A row of dots under the display shows how many ways there are, and jumps
-  straight to any of them.
+- **Tap the display to transform it** — a short, deliberate set of ways to see
+  the same amount. Counting levels give four: the numeral paired with its
+  quantity, one other way to split it (9 as 5+4, then as 3+3+3), a bead bar,
+  and a ten-frame. A row of dots shows how many there are and jumps to any of
+  them. Every view has to earn its tap.
 - **Numbers pop in** with bouncy animations, sparkles, and confetti on answers.
 - **Gentle sounds** (Web Audio, no files) and **spoken narration** (Web Speech,
   no files) — it counts aloud "one, two, three…" and reads equations out loud.
@@ -47,13 +47,17 @@ The visuals follow how children this age actually build number sense — seeing
 | **1–6** | dice / domino pip patterns | already familiar; recognised instantly |
 | **7–10** | a row of five + the remainder | builds the "five and some more" benchmark |
 | **11–20** | a full ten + the rest | ten becomes a unit |
-| **21–100** | groups of ten | place value (100 reads as *ten tens*) |
+| **21–100** | ten-frames | place value (100 reads as *ten tens*) |
 | **any** | never more than **5 in a row**; each group on its own tinted plate | keeps every amount countable at a glance |
+
+Past **20** we stop drawing separate things altogether and switch to ten-frames.
+A hundred tiny puppies is wallpaper, not a quantity — nobody is going to touch
+them one at a time, and tens are what ten-frames are for.
 
 Other pedagogy baked in:
 
-- **Multiple decompositions.** Tapping cycles a number through different splits
-  (9 → 5+4 → 3+3+3 → 6+3) so the same total can be seen more than one way.
+- **A second way to see it.** One tap shows the same total split another way
+  (9 as 5+4, then as 3+3+3) — enough to make the point, not a slideshow.
 - **Part–whole colouring.** In `5 + 4`, the 5 is pink and the 4 is blue — and
   the answer is that same pink 5 beside that same blue 4.
 - **Number bonds.** The whole-and-two-parts diagram from Singapore Math.
@@ -66,15 +70,17 @@ Other pedagogy baked in:
   five is always light blue, a nine always dark blue — drawn as a bar whose
   *length* is the number, so nine is visibly longer than four. In an equation
   the two addend bars laid against the answer bar show the sum as length.
-- **All the ways to make a number.** Tap far enough on a number up to ten and
-  it shows the whole family of pairs at once (1+8, 2+7, 3+6 …) as stacked
-  two-colour strips; as one part grows the other shrinks, in a staircase.
+- **All the ways to make a number.** Once a sum is solved and the answer is ten
+  or less, one more tap shows the whole family of pairs (1+8, 2+7, 3+6 …) as
+  stacked two-colour strips; as one part grows the other shrinks, in a
+  staircase. It lives with the sums, not in front of the youngest children.
 - **Two colour worlds.** A **Bright** candy palette and a **Calm** one in muted
   watercolour tones, for children who find the bright version busy.
 - **Touch each thing to count it.** Tapping an object rings it and says its
   number — one-to-one correspondence, the way children actually learn to count.
-  Finishing the set is celebrated. Tapping the space around them moves on to
-  the next way of seeing the number.
+  Finishing the set is celebrated. Only offered while there are few enough to
+  actually count; past that a tap just turns to the next view, and the hint
+  underneath says so.
 - **Make a ten.** When an addition crosses ten, `8 + 5` shows the 8 borrowing
   just 2 to fill a ten-frame, leaving 3 — so the child sees `10 + 3`.
 - **Every level holds its range.** Digits that would take you outside the level
@@ -94,7 +100,7 @@ Other pedagogy baked in:
 | 4 | Add & Take Away    | Addition and subtraction to 10               |
 | 5 | Numbers to 20      | Add/subtract within 20                       |
 | 6 | Big Numbers to 100 | Two-digit add/subtract, place value          |
-| 7 | Equal Groups       | Multiplication as repeated adding            |
+| 7 | Equal Groups       | Multiplication as equal groups, up to 20     |
 
 Levels are **data-driven** — see [`src/config.js`](src/config.js). Add an object
 to the `LEVELS` array and the slider, keypad, and display update automatically.

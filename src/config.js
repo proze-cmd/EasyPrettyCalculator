@@ -70,7 +70,9 @@ export const LEVELS = [
     blurb: 'Meet multiplication — adding equal groups!',
     mode: 'calc',
     ops: ['+', '−', '×'],
-    maxValue: 100,
+    // Equal groups only teaches anything while you can still see the groups.
+    // Twenty keeps 4x5 and 2x10 in reach and keeps 9x9 out of it.
+    maxValue: 20,
   },
 ];
 
@@ -128,9 +130,6 @@ export const BEAD_COLORS = {
   10: { solid: '#e8a90c', name: 'gold' },
 };
 
-// Colored "dot" shapes cycle through these shapes for variety.
-export const DOT_SHAPES = ['circle', 'star', 'heart', 'square'];
-
 // Pretty pastel button colors (numbers rotate through these).
 export const NUMBER_BUTTON_COLORS = [
   'btn-pink',
@@ -175,6 +174,11 @@ export const RESULT_COLOR = { bright: '#0ca678', calm: '#5c8a5e' };
 // Little celebration emoji used for confetti bursts.
 export const CONFETTI = ['🎉', '⭐', '✨', '🎊', '🌟', '💫', '🎈', '💖', '🌈'];
 
-// Never draw more individual items than this — beyond it we show the numeral
-// with a friendly note instead of an unreadable carpet of icons.
-export const MAX_ITEMS = 100;
+/**
+ * The most separate things we will ever draw for a child to look at and touch.
+ * Past this a picture stops being countable and becomes wallpaper — a hundred
+ * seven-pixel puppies is not something anyone is going to count one by one.
+ * Bigger amounts are shown as ten-frames instead, which is the right tool for
+ * tens anyway.
+ */
+export const MAX_DRAWN = 20;

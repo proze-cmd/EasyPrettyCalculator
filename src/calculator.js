@@ -280,9 +280,11 @@ function pressOp(op, btn) {
     if (c.b === '') {
       c.op = op; // just switch the operator
     } else {
-      // Chain: compute what we have, keep going from the result.
-      const r = compute(Number(c.a), c.op, Number(c.b));
-      state.calc = { a: String(r), op, b: '', result: null, phase: 'b' };
+      // The sum is already complete. Pressing another operator used to solve it
+      // in silence and sweep the answer away unseen. Show the answer instead —
+      // pressing the operator again carries on from it.
+      pressEquals(btn);
+      return;
     }
   }
 

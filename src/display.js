@@ -10,7 +10,7 @@
 // child just typed — and taps down into what those symbols mean.
 
 import { state, currentLevel, persist } from './state.js';
-import { OBJECT_THEMES } from './config.js';
+import { OBJECT_THEMES, MAX_DRAWN } from './config.js';
 import {
   renderQuantity,
   renderNumeral,
@@ -33,8 +33,8 @@ import { say, saySequence } from './speech.js';
 let displayEl;
 let journeyEl;
 
-const COUNTABLE = '.obj, .dot, .tf-filled, .bead';
-const COUNTED = '.obj.counted, .dot.counted, .tf-filled.counted, .bead.counted';
+const COUNTABLE = '.obj, .tf-filled, .bead';
+const COUNTED = '.obj.counted, .tf-filled.counted, .bead.counted';
 
 export function initDisplay() {
   displayEl = document.getElementById('display');
@@ -60,6 +60,13 @@ export function initDisplay() {
 function onDisplayClick(e) {
   const item = e.target.closest(COUNTABLE);
   if (item) {
+    // Counting one at a time is only a real activity while there are few
+    // enough to bother with. Past that the picture is there to be seen, not
+    // poked, so a tap moves on like anywhere else.
+    if (countScope(item).querySelectorAll(COUNTABLE).length > MAX_DRAWN) {
+      cycleView();
+      return;
+    }
     if (!item.classList.contains('counted')) countOne(item);
     return;
   }
@@ -139,27 +146,44 @@ function makeTenNumbers() {
   return { a, b, need: 10 - a, rest: result - 10 };
 }
 
+/** All the pairs that make the answer — worth showing once it's small enough. */
+function waysNumber() {
+  const { c, result } = calcParts();
+  if (result === null || c.op === '−') return null;
+  return result >= 2 && result <= 10 ? result : null;
+}
+
 function viewCycle() {
   const level = currentLevel();
 
+  // Every view has to earn its tap. Four ways of seeing a number is plenty for
+  // a child of this age; eight is a chore, and several of the eight were the
+  // same picture with a different sticker on it.
   if (level.mode === 'count') {
     const n = state.countValue;
+    const drawable = n <= MAX_DRAWN;
     const views = [{ mode: 'paired' }];
-    const alts = Math.min(decompositionCount(n), 3);
-    for (let i = 0; i < alts; i++) views.push({ mode: 'objects', decomp: i });
-    views.push({ mode: 'dots', decomp: 0 });
+    // One alternative split — enough to show a total can be seen more than one
+    // way, without turning it into a slideshow.
+    if (drawable && decompositionCount(n) > 1) views.push({ mode: 'objects', decomp: 1 });
     views.push({ mode: 'rods' });
-    views.push({ mode: 'tenframe' });
-    // The full family of pairs is only legible for small numbers; past ten it
-    // would be a wall of strips.
-    if (n >= 2 && n <= 10) views.push({ mode: 'ways' });
+    // Past the draw limit the paired view is already showing ten-frames, so a
+    // second ten-frame view would just be the same picture again.
+    if (drawable) views.push({ mode: 'tenframe' });
     return views;
   }
 
-  const views = [{ mode: 'numeral' }, { mode: 'objects' }];
+  // Same reasoning: once the numbers are too big to draw as separate things,
+  // "objects" quietly becomes a ten-frame, so it stops being its own view.
+  const { a, b, result } = calcParts();
+  const biggest = Math.max(a || 0, b || 0, result || 0);
+  const views = [{ mode: 'numeral' }];
+  if (biggest <= MAX_DRAWN) views.push({ mode: 'objects' });
   if (makeTenNumbers()) views.push({ mode: 'maketen' });
-  views.push({ mode: 'dots' }, { mode: 'rods' });
   if (bondNumbers()) views.push({ mode: 'bond' });
+  // The whole family of pairs belongs where a child is actually making sums,
+  // not in front of a four-year-old who is still learning what five looks like.
+  if (waysNumber()) views.push({ mode: 'ways' });
   views.push({ mode: 'tenframe' });
   return views;
 }
@@ -195,7 +219,6 @@ function goToView(index) {
   const from = state.viewIndex % cycle.length;
   if (next === 0 && from !== 0 && !state.materialPinned) {
     state.objectThemeIndex = (state.objectThemeIndex + 1) % OBJECT_THEMES.length;
-    state.shapeIndex = state.shapeIndex + 1;
     state.numeralStyleIndex = state.numeralStyleIndex + 1;
     persist();
   }
@@ -214,9 +237,7 @@ function narrateView() {
 
   if (level.mode === 'count') {
     const n = state.countValue;
-    if (view.mode === 'ways') {
-      say(`Here are all the ways to make ${n}`);
-    } else if (view.mode === 'objects' || view.mode === 'dots' || view.mode === 'rods') {
+    if (view.mode === 'objects' || view.mode === 'rods') {
       const groups = groupsFor(n, view.decomp || 0);
       say(groups.length > 1 ? `${describeGroups(groups)}. That's ${n}.` : String(n));
     } else {
@@ -225,6 +246,11 @@ function narrateView() {
     return;
   }
 
+  if (view.mode === 'ways') {
+    const w = waysNumber();
+    if (w) say(`Here are all the ways to make ${w}`);
+    return;
+  }
   if (view.mode === 'maketen') {
     const m = makeTenNumbers();
     if (m) say(`${m.a} needs ${m.need} more to make 10. Then ${m.rest} more makes ${10 + m.rest}.`);
@@ -276,12 +302,68 @@ export function renderDisplay(animate = false) {
   }
 
   displayEl.classList.toggle('tappable', hasContent());
+  describeDisplay();
+  updateHint();
   renderJourney();
 
   if (animate) {
     const content = displayEl.firstElementChild;
     if (content) pop(content);
   }
+}
+
+/**
+ * The hint has to describe what this screen actually offers. Telling a child
+ * to touch each one in front of a hundred ten-frame dots is a small lie, and
+ * they will try it.
+ */
+function updateHint() {
+  const icons = document.querySelector('#tapHint .tap-hint__icons');
+  const text = document.querySelector('#tapHint .tap-hint__text');
+  if (!icons || !text) return;
+
+  const material = OBJECT_THEMES[state.objectThemeIndex % OBJECT_THEMES.length].emoji;
+
+  if (!hasContent()) {
+    icons.textContent = '👆 ✨';
+    text.textContent = currentLevel().mode === 'count' ? 'Pick a number' : 'Build a problem';
+    return;
+  }
+
+  // Each equation row is counted on its own, so judge them separately.
+  const rows = [...displayEl.querySelectorAll('.equation__row')];
+  const scopes = rows.length ? rows : [displayEl];
+  const counts = scopes.map((s) => s.querySelectorAll(COUNTABLE).length).filter((n) => n > 0);
+  const canCount = counts.length > 0 && counts.every((n) => n <= MAX_DRAWN);
+
+  if (canCount) {
+    icons.textContent = `👆 ${material}`;
+    text.textContent = 'Touch each one to count it';
+  } else {
+    icons.textContent = '👆 ✨';
+    text.textContent = 'Tap to see it another way';
+  }
+}
+
+/** Keep the display's label saying what is actually on it. */
+function describeDisplay() {
+  const level = currentLevel();
+  if (!hasContent()) {
+    displayEl.setAttribute('aria-label', 'Nothing yet. Pick a number to begin.');
+    return;
+  }
+  if (level.mode === 'count') {
+    displayEl.setAttribute('aria-label', `Showing ${state.countValue}. Tap to see it another way.`);
+    return;
+  }
+  const { c, a, b, result } = calcParts();
+  const parts = [a];
+  if (c.op) parts.push(c.op === '+' ? 'plus' : c.op === '−' ? 'minus' : 'times', b === null ? '' : b);
+  if (result !== null) parts.push('equals', result);
+  displayEl.setAttribute(
+    'aria-label',
+    `${parts.filter((x) => x !== null && x !== '').join(' ')}. Tap to see it another way.`
+  );
 }
 
 function showPlaceholder() {
@@ -294,7 +376,6 @@ function showPlaceholder() {
 
 const styleOpts = () => ({
   themeIndex: state.objectThemeIndex,
-  shapeIndex: state.shapeIndex,
   numeralIndex: state.numeralStyleIndex,
 });
 
@@ -308,11 +389,6 @@ function renderCountMode() {
   }
 
   const view = currentView();
-
-  if (view.mode === 'ways') {
-    displayEl.appendChild(renderWays(n));
-    return;
-  }
 
   if (view.mode === 'paired') {
     // Numeral and quantity side by side: "this symbol means this many".
@@ -348,6 +424,14 @@ function renderCalcMode() {
 
   const view = currentView();
 
+  if (view.mode === 'ways') {
+    const w = waysNumber();
+    if (w) {
+      displayEl.appendChild(renderWays(w));
+      return;
+    }
+  }
+
   if (view.mode === 'maketen') {
     const m = makeTenNumbers();
     if (m) {
@@ -364,11 +448,7 @@ function renderCalcMode() {
     }
   }
 
-  const visual =
-    view.mode === 'objects' ||
-    view.mode === 'dots' ||
-    view.mode === 'tenframe' ||
-    view.mode === 'rods';
+  const visual = view.mode === 'objects' || view.mode === 'tenframe';
   const table = document.createElement('div');
   table.className = 'equation ' + (visual ? 'equation--visual' : 'equation--numeral');
 
@@ -438,6 +518,8 @@ function resultOptions(c, a, b, result) {
   return { uniformColor: colorA };
 }
 
+const visualModes = new Set(['objects', 'tenframe']);
+
 function row(sign, value, view, opts = {}, isResult = false) {
   const el = document.createElement('div');
   el.className = 'equation__row' + (isResult ? ' equation__row--result' : '');
@@ -456,7 +538,7 @@ function row(sign, value, view, opts = {}, isResult = false) {
     blank.textContent = isResult ? '?' : '';
     valEl.appendChild(blank);
   } else {
-    const mode = view.mode === 'bond' || view.mode === 'maketen' ? 'numeral' : view.mode;
+    const mode = visualModes.has(view.mode) ? view.mode : 'numeral';
     const quantity = renderQuantity(value, {
       mode,
       size: 'small',
@@ -468,7 +550,7 @@ function row(sign, value, view, opts = {}, isResult = false) {
       zeroNote: isResult,
       // Give each row of a visual equation its own coloured plate so the parts
       // stay traceable from the numbers above into the answer below.
-      forceChip: mode === 'objects' || mode === 'dots',
+      forceChip: mode === 'objects',
       numeralColor: isResult ? resultColor() : null,
       ...styleOpts(),
     });

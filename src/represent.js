@@ -9,14 +9,13 @@
 
 import {
   OBJECT_THEMES,
-  DOT_SHAPES,
   NUMERAL_STYLES,
   NUMERAL_STYLES_CALM,
   PART_COLORS,
   PART_COLORS_CALM,
   BEAD_COLORS,
   RESULT_COLOR,
-  MAX_ITEMS,
+  MAX_DRAWN,
 } from './config.js';
 import { groupsFor, pipCells, waysToMake } from './arrange.js';
 import { state } from './state.js';
@@ -41,12 +40,11 @@ export function resultColor() {
  *
  * @param {number} n            the amount to draw
  * @param {object} opts
- *   mode          'objects' | 'dots' | 'tenframe' | 'numeral'
+ *   mode          'objects' | 'tenframe' | 'rods' | 'numeral'
  *   groups        explicit group sizes (overrides the decomposition)
  *   decompIndex   which stored decomposition to use when groups aren't given
  *   size          'big' (a lone number) | 'small' (a row in an equation)
  *   themeIndex    which emoji set to use
- *   shapeIndex    which dot glyph to use
  *   numeralIndex  which numeral colour style to use
  *   groupColors   explicit colour per group (used to keep addition parts visible)
  *   removedGroups group indices to draw as "taken away" (subtraction)
@@ -58,7 +56,6 @@ export function renderQuantity(n, opts = {}) {
     decompIndex = 0,
     size = 'big',
     themeIndex = 0,
-    shapeIndex = 0,
     numeralIndex = 0,
     groupColors = null,
     uniformColor = null,
@@ -80,11 +77,10 @@ export function renderQuantity(n, opts = {}) {
       ? renderNumeral(0, { size, numeralIndex })
       : renderEmptyFrame(size, zeroNote);
   }
-  if (value > MAX_ITEMS && mode !== 'numeral') {
-    const wrap = shell('rep--numeral', size);
-    wrap.appendChild(numeralSpan(value, numeralIndex, numeralColor));
-    wrap.appendChild(note(`that's ${value}! 🤯`));
-    return wrap;
+  // Too many to draw as separate things? Show it the way tens are meant to be
+  // shown instead of shrinking the pieces until nobody can use them.
+  if (value > MAX_DRAWN && mode === 'objects') {
+    return renderTenFrames(value, size);
   }
 
   switch (mode) {
@@ -94,7 +90,6 @@ export function renderQuantity(n, opts = {}) {
       return renderTenFrames(value, size);
     case 'rods':
       return renderRods(value, size);
-    case 'dots':
     case 'objects':
     default:
       return renderGrouped(value, {
@@ -102,7 +97,6 @@ export function renderQuantity(n, opts = {}) {
         groups: groups && groups.length ? groups : groupsFor(value, decompIndex),
         size,
         themeIndex,
-        shapeIndex,
         groupColors,
         uniformColor,
         removedGroups,
@@ -116,7 +110,7 @@ export function renderQuantity(n, opts = {}) {
 // ---------------------------------------------------------------------------
 
 function renderGrouped(n, o) {
-  const { mode, groups, size, themeIndex, shapeIndex, groupColors, uniformColor, removedGroups, forceChip } = o;
+  const { mode, groups, size, themeIndex, groupColors, uniformColor, removedGroups, forceChip } = o;
   const wrap = shell('rep--grouped', size);
 
   applyDensity(wrap, n);
@@ -144,7 +138,7 @@ function renderGrouped(n, o) {
 
     grp.appendChild(
       layoutGroup(count, (i) => {
-        const el = makeItem(mode, color, themeIndex, shapeIndex, drawn + i);
+        const el = makeItem(themeIndex);
         el.style.animationDelay = Math.min((drawn + i) * 32, 760) + 'ms';
         return el;
       })
@@ -194,32 +188,11 @@ function layoutGroup(count, makeAt) {
   return rows;
 }
 
-function makeItem(mode, color, themeIndex, shapeIndex, absoluteIndex) {
-  if (mode === 'dots') {
-    const dot = document.createElement('span');
-    dot.className = 'dot pop-in';
-    dot.textContent = shapeGlyph(DOT_SHAPES[shapeIndex % DOT_SHAPES.length]);
-    dot.style.color = color.solid;
-    return dot;
-  }
+function makeItem(themeIndex) {
   const obj = document.createElement('span');
   obj.className = 'obj pop-in';
   obj.textContent = OBJECT_THEMES[themeIndex % OBJECT_THEMES.length].emoji;
   return obj;
-}
-
-function shapeGlyph(shape) {
-  switch (shape) {
-    case 'star':
-      return '★';
-    case 'heart':
-      return '♥';
-    case 'square':
-      return '■';
-    case 'circle':
-    default:
-      return '●';
-  }
 }
 
 // ---------------------------------------------------------------------------
@@ -503,9 +476,9 @@ function shell(modifier, size) {
  */
 function applyDensity(el, total) {
   let vars = null;
-  if (total > 50) vars = { item: 'clamp(10px, 3.1vw, 16px)', gap: '3px', pad: '4px', group: '6px' };
-  else if (total > 20) vars = { item: 'clamp(14px, 4.2vw, 22px)', gap: '4px', pad: '5px', group: '8px' };
-  else if (total > 10) vars = { item: 'clamp(18px, 5.4vw, 29px)', gap: '5px', pad: '6px', group: '10px' };
+  if (total > 50) vars = { item: 'clamp(13px, 3.9vw, 20px)', gap: '3px', pad: '4px', group: '6px' };
+  else if (total > 20) vars = { item: 'clamp(16px, 4.8vw, 26px)', gap: '4px', pad: '5px', group: '8px' };
+  else if (total > 10) vars = { item: 'clamp(20px, 5.8vw, 30px)', gap: '5px', pad: '6px', group: '10px' };
   if (!vars) return;
   el.style.setProperty('--item', vars.item);
   el.style.setProperty('--gap', vars.gap);

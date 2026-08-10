@@ -39,7 +39,6 @@ export const state = {
   // Which view the display is showing (advances on each tap).
   viewIndex: 0,
   numeralStyleIndex: 0,
-  shapeIndex: 0,
 
   hasInteracted: false,
 };

@@ -20,22 +20,6 @@ function onLevelChange() {
   syncTrigger();
   rebuildKeypad();
   renderDisplay(false);
-  updateTapHint();
-}
-
-// The icons carry the message for children who aren't reading yet; the words
-// underneath are really for the grown-up sitting next to them.
-function updateTapHint() {
-  const lvl = currentLevel();
-  const icons = document.querySelector('#tapHint .tap-hint__icons');
-  const text = document.querySelector('#tapHint .tap-hint__text');
-  if (lvl.mode === 'count') {
-    icons.textContent = '👆 ✨ 🐰';
-    text.textContent = 'Touch each one to count it';
-  } else {
-    icons.textContent = '🔢 👆 ✨';
-    text.textContent = 'Build a problem, then tap it';
-  }
 }
 
 function boot() {
@@ -46,7 +30,6 @@ function boot() {
   initMaterials({ onPick: () => renderDisplay(true) });
 
   updateLevelBadge();
-  updateTapHint();
   renderDisplay(false);
 
   // Reveal the app once everything is ready (avoids a flash of unstyled DOM).

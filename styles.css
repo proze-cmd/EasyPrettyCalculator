@@ -13,7 +13,7 @@
   --bg-3: #fff6d6;
 
   --ink: #4a3a55;
-  --ink-soft: #8a7d95;
+  --ink-soft: #6c6076;
 
   --panel: #ffffff;
   --panel-edge: #ffd0e6;
@@ -228,7 +228,6 @@ body.theme-calm .journey__dot.on::before { background: #b5654e; }
   font-size: clamp(20px, 5vw, 26px);
   font-weight: 700;
   text-align: center;
-  opacity: 0.8;
 }
 
 .tap-hint {
@@ -247,11 +246,10 @@ body.theme-calm .journey__dot.on::before { background: #b5654e; }
   letter-spacing: 2px;
 }
 .tap-hint__text {
-  font-size: 12px;
-  opacity: 0.85;
+  font-size: 12.5px;
 }
 body.has-interacted .tap-hint {
-  opacity: 0.55;
+  opacity: 0.8;
 }
 
 /* --- Number representations --------------------------------------------
@@ -323,8 +321,8 @@ body.has-interacted .tap-hint {
 }
 /* In subtraction, the part being taken away stays visible but clearly gone. */
 .grp--removed {
-  opacity: 0.34;
-  filter: grayscale(0.7);
+  opacity: 0.55;
+  filter: grayscale(0.6);
   border-style: dashed;
 }
 
@@ -353,7 +351,6 @@ body.has-interacted .tap-hint {
   gap: var(--gap);
 }
 
-.dot,
 .obj {
   width: var(--item);
   height: var(--item);
@@ -362,9 +359,6 @@ body.has-interacted .tap-hint {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-}
-.dot {
-  filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.12));
 }
 
 /* Bead bars / number rods — colour and length both carry the quantity */
@@ -386,6 +380,7 @@ body.has-interacted .tap-hint {
   background: rgba(0, 0, 0, 0.04);
 }
 .bead {
+  flex: 0 0 auto;
   width: var(--item);
   height: var(--item);
   border-radius: 50%;
@@ -465,6 +460,9 @@ body.has-interacted .tap-hint {
   justify-content: center;
 }
 .tenframe {
+  /* A wrapping flex line will happily squeeze these until the cells are a
+     couple of pixels across. They keep their size. */
+  flex: 0 0 auto;
   display: grid;
   grid-template-columns: repeat(5, var(--item));
   grid-auto-rows: var(--item);
@@ -496,7 +494,6 @@ body.has-interacted .tap-hint {
 /* Counted by touch — one-to-one correspondence. A thing you have already
    counted stays marked, so you can see where you got to. */
 .obj,
-.dot,
 .bead,
 .tf-filled {
   cursor: pointer;
@@ -507,8 +504,7 @@ body.has-interacted .tap-hint {
   transform: scale(0.88);
   filter: saturate(0.55) brightness(1.06);
 }
-.obj.counted::after,
-.dot.counted::after {
+.obj.counted::after {
   content: '';
   position: absolute;
   inset: -12%;
@@ -605,7 +601,6 @@ body.theme-calm .rep.all-counted { box-shadow: 0 0 0 4px #dce9d6; }
   color: var(--ink-soft);
   font-size: clamp(34px, 9vw, 58px);
   font-weight: 800;
-  opacity: 0.5;
 }
 .equation__line {
   grid-column: 1 / -1;
@@ -673,8 +668,8 @@ body.theme-calm .rep.all-counted { box-shadow: 0 0 0 4px #dce9d6; }
 }
 /* Out of range for this level — still pressable, but visibly not the way on. */
 .btn--muted {
-  opacity: 0.34;
-  filter: saturate(0.4);
+  opacity: 0.62;
+  filter: saturate(0.25);
 }
 .btn--refused {
   animation: wobble 0.4s ease;
@@ -945,7 +940,7 @@ body.theme-calm .rep.all-counted { box-shadow: 0 0 0 4px #dce9d6; }
 .material.on { border-color: #ff6b9d; background: #fff5fa; }
 .material__emoji { font-size: 30px; line-height: 1; }
 .material__name {
-  font-size: 11px;
+  font-size: 12.5px;
   font-weight: 700;
   color: var(--ink-soft);
   text-align: center;
@@ -984,6 +979,7 @@ body.theme-calm .surprise.on { border-color: #c9a37f; color: #a5714f; background
    ------------------------------------------------------------------------ */
 
 body.theme-calm {
+  --ink-soft: #75665a;
   --bg-1: #f7efe3;
   --bg-2: #e9efe6;
   --bg-3: #f6e8e2;
@@ -1041,8 +1037,7 @@ body.theme-calm .equation__row--result .equation__sign,
 body.theme-calm .equation__row--result .numeral {
   color: #5c8a5e;
 }
-body.theme-calm .obj.counted::after,
-body.theme-calm .dot.counted::after {
+body.theme-calm .obj.counted::after {
   border-color: #6f8f5f;
 }
 body.theme-calm .bead.counted,
@@ -1172,10 +1167,34 @@ body.theme-calm .btn-back   { background: linear-gradient(180deg,#eae5db,#d3ccbf
   .material,
   .segmented__btn,
   .obj,
-  .dot,
   .bead,
   .tf-filled {
     transition: none !important;
+  }
+}
+
+/* Tablets. Everything is sized from viewport width, but the column stops
+   growing at 520px — so on a big screen the picture stayed phone-sized in a
+   half-empty panel. Give the column and the pieces room to grow with it. */
+@media (min-width: 700px) and (min-height: 800px) {
+  .app {
+    max-width: 640px;
+    gap: 14px;
+  }
+  .rep--big {
+    --item: clamp(38px, 6.4vw, 58px);
+  }
+  .rep--pair {
+    --item: clamp(28px, 4.6vw, 40px);
+  }
+  .rep--big.rep--numeral .numeral {
+    font-size: clamp(120px, 20vw, 200px);
+  }
+  :root {
+    --btn-h: clamp(64px, 8vh, 86px);
+  }
+  .btn {
+    font-size: clamp(26px, 3.4vw, 38px);
   }
 }
 

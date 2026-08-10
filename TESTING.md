@@ -87,13 +87,20 @@ Do this on **390×844** first, then repeat the shaded rows on 320×568,
 - Press **1** → no "ways to make 1" (there are none).
 - Rods: one 9-long dark-blue bar with a break after the fifth. Not 5+4.
 
-### Level 2 — Count by 10s
+### Level 2 — Count by 2s
+- Press **14** → pairs view offered (it is not offered on Count to 10).
+- 14 → **7 pairs, none left, "even"**. 7 → 3 pairs + one in a dashed ring, "odd".
+
+### Level 3 — Count by 5s
+- Press **35** → seven ten-frames' worth; no loose things to touch.
+
+### Level 4 — Count by 10s
 - Press **100** → numeral + **ten ten-frames**, no loose objects (I2).
 - **2 views only** (paired, rods) — no duplicate ten-frame view.
 - Touching a cell must **turn the page**, not count (I2/I9). Hint must say
   "Tap to see it another way", not "Touch each one".
 
-### Level 3 — Adding to 10
+### Level 5 — Adding to 10
 - `5 + 4 =` → stacked equation, `=` under the line, answer green.
 - Objects view: pink 5 above blue 4; the answer is that **same** pink 5 beside
   that **same** blue 4 (principle 6).
@@ -101,7 +108,7 @@ Do this on **390×844** first, then repeat the shaded rows on 320×568,
 - Ways: 8 strips, `1 + 8` … `8 + 1`, a clean staircase.
 - Type `9` then `+` → every digit above 1 dims. Press one → wobble + "too big".
 
-### Level 4 — Add & Take Away
+### Level 6 — Add & Take Away
 - `9 − 4 =` → top row shows 5 kept + 4 faded and dashed.
 - **Compare view**: two proportional bars, dashed gap labelled **5**,
   caption "9 is 5 more than 4". Bar ratio ≈ 4/9.
@@ -110,20 +117,27 @@ Do this on **390×844** first, then repeat the shaded rows on 320×568,
 - `0 + 5 =` → zero row is an empty frame with **no** "none left" clutter.
 - `3 − 9` must be impossible to build (I5).
 
-### Level 5 — Numbers to 20
+### Level 7 — Numbers to 20
 - `8 + 5 =` → **make-a-ten**: first frame fills 8 pink + 2 blue, second frame
   3 blue, "10 + 3 = 13". Borrowed beads land *after* the rest.
 
-### Level 6 — Big Numbers to 100
+### Level 8 — Big Numbers to 100
 - `27 + 18 =` → **regrouping**: "7 ones and 8 ones make 15", ten ones in a
   frame, ↓, a gold ten bar "a new ten!", "and 5 left over",
   "4 tens and 5 ones = 45".
 - `21 + 13 =` → regrouping must be **absent** (nothing was traded).
 - `45` as a quantity → ten-frames, not 45 loose things.
 
-### Level 7 — Equal Groups
+### Level 9 — Equal Groups
 - `4 × 5 =` → answer is **4 groups of 5**, each on its own coloured plate.
 - `9 × 9` must be **impossible** — level caps at 20 (I4).
+
+### Level 10 — Fair Shares
+- `12 ÷` → only **1, 2, 3, 4, 6** stay lit. Pressing 5 wobbles and says it
+  doesn't share evenly. Leftovers are a later idea; the dimming is a first
+  look at factors.
+- `12 ÷ 3 =` → the divisor draws as **three empty plates**, not three things,
+  and the answer is three plates of four.
 
 ### Settings & chrome
 - Level slider 1→7 mid-problem: display clears, keypad rebuilds, no errors.
@@ -152,7 +166,9 @@ how many *words* and how many *shapes* are on screen?
 | Bond | 0 | dots inside all three circles |
 | Make a ten | 0 | the 5 drawn whole with the movers marked |
 | Regrouping | 0 | ones → a gathered ten → tens and ones |
-| Comparison | 1 | blocks, with the gap drawn as empty ones |
+| Comparison | 1 | blocks, the gap drawn as empty ones, plus `9 > 4` |
+| Pairs | 1 | everything paired, or one left in a dashed ring |
+| Fair shares | 0 | things, empty plates, then plates with things on |
 | Ways to make | 1 | the staircase |
 
 **If a screen's word count creeps up, it has stopped explaining and started

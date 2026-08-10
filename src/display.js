@@ -16,6 +16,8 @@ import {
   renderNumeral,
   renderWays,
   renderMakeTen,
+  renderPairs,
+  renderPlates,
   renderRegroup,
   renderCompare,
   partColors,
@@ -44,7 +46,7 @@ const COUNTED = '.obj.counted, .tf-filled.counted, .bead.counted';
  * that happen to contain circles. Counting the circles in an explanation
  * teaches nothing and gets in the way of reading it.
  */
-const COUNTABLE_VIEWS = new Set(['paired', 'objects', 'tenframe', 'rods']);
+const COUNTABLE_VIEWS = new Set(['paired', 'objects', 'tenframe', 'rods', 'pairs']);
 
 function viewIsCountable() {
   return COUNTABLE_VIEWS.has(currentView().mode);
@@ -189,10 +191,15 @@ function compareNumbers() {
   return { bigger: a, smaller: b, diff: result };
 }
 
-/** All the pairs that make the answer — worth showing once it's small enough. */
+/**
+ * All the pairs that make the answer — worth showing once it's small enough.
+ * Only alongside addition: the pairs are an addition idea, and offering them
+ * after "12 shared between 3 is 4" changes the subject to something the child
+ * wasn't asking about.
+ */
 function waysNumber() {
   const { c, result } = calcParts();
-  if (result === null || c.op === '−') return null;
+  if (result === null || c.op !== '+') return null;
   return result >= 2 && result <= 10 ? result : null;
 }
 
@@ -209,6 +216,8 @@ function viewCycle() {
     // One alternative split — enough to show a total can be seen more than one
     // way, without turning it into a slideshow.
     if (drawable && decompositionCount(n) > 1) views.push({ mode: 'objects', decomp: 1 });
+    // Pairing up belongs on the level where counting is pairing.
+    if (drawable && level.pairs) views.push({ mode: 'pairs' });
     views.push({ mode: 'rods' });
     // Past the draw limit the paired view is already showing ten-frames, so a
     // second ten-frame view would just be the same picture again.
@@ -282,6 +291,10 @@ function narrateView() {
 
   if (level.mode === 'count') {
     const n = state.countValue;
+    if (view.mode === 'pairs') {
+      say(n % 2 ? `${n} makes pairs with one left over. ${n} is odd.` : `${n} pairs up exactly. ${n} is even.`);
+      return;
+    }
     if (view.mode === 'objects' || view.mode === 'rods') {
       const groups = groupsFor(n, view.decomp || 0);
       say(groups.length > 1 ? `${describeGroups(groups)}. That's ${n}.` : String(n));
@@ -314,7 +327,9 @@ function narrateView() {
   }
   if (view.mode === 'compare') {
     const cmp = compareNumbers();
-    if (cmp) say(`${cmp.bigger} is ${cmp.diff} more than ${cmp.smaller}`);
+    if (cmp) {
+      say(`${cmp.bigger} is greater than ${cmp.smaller}. ${cmp.bigger} is ${cmp.diff} more than ${cmp.smaller}.`);
+    }
     return;
   }
   const bond = bondNumbers();
@@ -452,6 +467,11 @@ function renderCountMode() {
 
   const view = currentView();
 
+  if (view.mode === 'pairs') {
+    displayEl.appendChild(renderPairs(n, state.objectThemeIndex));
+    return;
+  }
+
   if (view.mode === 'paired') {
     // Numeral and quantity side by side: "this symbol means this many".
     const wrap = document.createElement('div');
@@ -577,7 +597,9 @@ function renderCalcMode() {
   if (c.op) {
     // Row 2 — the operator and the second number.
     const showB = c.b === '' && c.phase === 'b' ? null : b;
-    table.appendChild(row(c.op, showB, view, { uniformColor: colorB }));
+    table.appendChild(
+      row(c.op, showB, view, { uniformColor: colorB, plates: c.op === '÷' })
+    );
 
     const line = document.createElement('div');
     line.className = 'equation__line';
@@ -609,6 +631,12 @@ function resultOptions(c, a, b, result) {
     const groups = groupsForProduct(a, b);
     return { groups, groupColors: groups.map((_, i) => palette[i % palette.length]) };
   }
+  // Sharing: the answer is what one person gets, so the picture is the whole
+  // pile already dealt out — b plates with that many on each.
+  if (c.op === '÷' && b > 0 && result > 0) {
+    const groups = groupsForProduct(b, result);
+    return { groups, groupColors: groups.map((_, i) => palette[i % palette.length]) };
+  }
   return { uniformColor: colorA };
 }
 
@@ -631,6 +659,9 @@ function row(sign, value, view, opts = {}, isResult = false) {
     blank.className = 'equation__blank';
     blank.textContent = isResult ? '?' : '';
     valEl.appendChild(blank);
+  } else if (opts.plates && visualModes.has(view.mode)) {
+    // "Shared between three" means three places, not three more things.
+    valEl.appendChild(renderPlates(value, 'small'));
   } else {
     const mode = visualModes.has(view.mode) ? view.mode : 'numeral';
     const quantity = renderQuantity(value, {

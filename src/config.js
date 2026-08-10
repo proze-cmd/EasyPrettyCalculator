@@ -25,6 +25,27 @@ export const LEVELS = [
   },
   {
     id: 2,
+    name: 'Count by 2s',
+    blurb: '2, 4, 6, 8 … counting in pairs.',
+    mode: 'count',
+    keys: [2, 4, 6, 8, 10, 12, 14, 16, 18, 20],
+    ops: [],
+    maxValue: 20,
+    // Counting in twos is counting in pairs, so this is where pairing up —
+    // and finding the odd one out — belongs.
+    pairs: true,
+  },
+  {
+    id: 3,
+    name: 'Count by 5s',
+    blurb: '5, 10, 15, 20 … all the way to 50.',
+    mode: 'count',
+    keys: [5, 10, 15, 20, 25, 30, 35, 40, 45, 50],
+    ops: [],
+    maxValue: 50,
+  },
+  {
+    id: 4,
     name: 'Count by 10s',
     blurb: '10, 20, 30 … all the way to 100!',
     mode: 'count',
@@ -33,7 +54,7 @@ export const LEVELS = [
     maxValue: 100,
   },
   {
-    id: 3,
+    id: 5,
     name: 'Adding to 10',
     blurb: 'Add numbers together, up to 10.',
     mode: 'calc',
@@ -41,7 +62,7 @@ export const LEVELS = [
     maxValue: 10,
   },
   {
-    id: 4,
+    id: 6,
     name: 'Add & Take Away',
     blurb: 'Adding and subtracting, up to 10.',
     mode: 'calc',
@@ -49,7 +70,7 @@ export const LEVELS = [
     maxValue: 10,
   },
   {
-    id: 5,
+    id: 7,
     name: 'Numbers to 20',
     blurb: 'Add and take away, all the way to 20.',
     mode: 'calc',
@@ -57,7 +78,7 @@ export const LEVELS = [
     maxValue: 20,
   },
   {
-    id: 6,
+    id: 8,
     name: 'Big Numbers to 100',
     blurb: 'Two-digit adding and subtracting, up to 100.',
     mode: 'calc',
@@ -65,13 +86,21 @@ export const LEVELS = [
     maxValue: 100,
   },
   {
-    id: 7,
+    id: 9,
     name: 'Equal Groups',
     blurb: 'Meet multiplication — adding equal groups!',
     mode: 'calc',
     ops: ['+', '−', '×'],
     // Equal groups only teaches anything while you can still see the groups.
     // Twenty keeps 4x5 and 2x10 in reach and keeps 9x9 out of it.
+    maxValue: 20,
+  },
+  {
+    id: 10,
+    name: 'Fair Shares',
+    blurb: 'Sharing things out evenly — meet division.',
+    mode: 'calc',
+    ops: ['×', '÷'],
     maxValue: 20,
   },
 ];

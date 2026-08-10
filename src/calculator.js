@@ -42,6 +42,8 @@ function maxAllowed() {
       return a; // can't take away more than there is
     case '×':
       return a > 0 ? Math.floor(level.maxValue / a) : level.maxValue;
+    case '÷':
+      return a; // you can share a pile between at most that many
     default:
       return level.maxValue;
   }
@@ -57,7 +59,18 @@ function digitBlocked(digit) {
   const c = state.calc;
   if (c.phase === 'done') return false; // a new problem is about to start
   const current = c.phase === 'a' ? c.a : c.b;
-  return candidate(current, digit) > maxAllowed();
+  const value = candidate(current, digit);
+  if (value > maxAllowed()) return true;
+
+  // Sharing only makes sense when it comes out even — leftovers are a later
+  // idea. So the keypad offers exactly the numbers this pile shares between,
+  // which is a quiet first look at factors.
+  if (c.phase === 'b' && c.op === '÷') {
+    const total = Number(c.a || 0);
+    if (value === 0) return true;
+    if (total % value !== 0) return true;
+  }
+  return false;
 }
 
 // -------------------------------------------------------------------------
@@ -144,7 +157,11 @@ function makeButton(label, colorClass) {
 }
 
 function opName(op) {
-  return op === '+' ? 'Plus' : op === '−' ? 'Minus' : op === '×' ? 'Times' : op;
+  if (op === '+') return 'Plus';
+  if (op === '−') return 'Minus';
+  if (op === '×') return 'Times';
+  if (op === '÷') return 'Shared between';
+  return op;
 }
 
 // -------------------------------------------------------------------------
@@ -235,6 +252,7 @@ function refuse(btn, digit) {
   }
   playClear();
   if (c.op === '−' && c.phase === 'b') say(`We only have ${c.a}`);
+  else if (c.op === '÷' && c.phase === 'b') say(`${c.a} does not share evenly that way`);
   else say('That one is too big for this level');
 }
 
@@ -330,6 +348,8 @@ function compute(a, op, b) {
       return a - b;
     case '×':
       return a * b;
+    case '÷':
+      return b === 0 ? a : a / b;
     default:
       return a;
   }
@@ -419,6 +439,9 @@ function handlePhysicalKey(e) {
     pressOp('−', null);
   } else if ((e.key === '*' || e.key.toLowerCase() === 'x') && level.ops.includes('×')) {
     pressOp('×', null);
+  } else if (e.key === '/' && level.ops.includes('÷')) {
+    e.preventDefault();
+    pressOp('÷', null);
   } else if (e.key === 'Enter' || e.key === '=') {
     e.preventDefault();
     pressEquals(null);

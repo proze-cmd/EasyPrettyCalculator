@@ -114,6 +114,8 @@ export function opWord(op) {
       return 'minus';
     case '×':
       return 'times';
+    case '÷':
+      return 'shared between';
     default:
       return '';
   }

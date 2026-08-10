@@ -94,6 +94,13 @@ Other pedagogy baked in:
   dim, and pressing one wobbles and says why. You can never take away more than
   you have, so the answer never goes negative.
 - **Zero has a picture** — an empty ten-frame, spoken as "none left".
+- **Odd and even, by doing it.** On the count-by-2s level, one tap pairs
+  everything up. Either it pairs exactly, or one is left over in a dashed ring —
+  which is the whole of odd and even, done rather than told.
+- **Fair shares.** `12 ÷ 3` draws twelve things and three *empty plates*, then
+  deals them out: three plates of four. The keypad only offers numbers the pile
+  shares evenly between, so a child bumping along it is meeting factors.
+- **More than.** The comparison screen names what the bars already show: `9 > 4`.
 - **Pick your own things to count.** Puppies, shells, acorns, rockets — chosen
   materials stay put, or "surprise me" keeps them changing.
 
@@ -102,15 +109,18 @@ invariants that must never break, and the measurement traps that have fooled us.
 
 ## 📚 Levels
 
-| # | Name               | What it teaches                              |
-|---|--------------------|----------------------------------------------|
-| 1 | Count to 10        | Number buttons 1–10, no functions            |
-| 2 | Count by 10s       | Buttons 10, 20, 30 … 100                     |
-| 3 | Adding to 10       | Addition, answers up to 10                   |
-| 4 | Add & Take Away    | Addition and subtraction to 10               |
-| 5 | Numbers to 20      | Add/subtract within 20                       |
-| 6 | Big Numbers to 100 | Two-digit add/subtract, place value          |
-| 7 | Equal Groups       | Multiplication as equal groups, up to 20     |
+| #  | Name               | What it teaches                              |
+|----|--------------------|----------------------------------------------|
+| 1  | Count to 10        | Number buttons 1–10, no functions            |
+| 2  | Count by 2s        | Skip counting in pairs — and odd vs even     |
+| 3  | Count by 5s        | Skip counting to 50                          |
+| 4  | Count by 10s       | Buttons 10, 20, 30 … 100                     |
+| 5  | Adding to 10       | Addition, answers up to 10                   |
+| 6  | Add & Take Away    | Addition and subtraction to 10               |
+| 7  | Numbers to 20      | Add/subtract within 20                       |
+| 8  | Big Numbers to 100 | Two-digit add/subtract, place value          |
+| 9  | Equal Groups       | Multiplication as equal groups, up to 20     |
+| 10 | Fair Shares        | Division as sharing out evenly               |
 
 Levels are **data-driven** — see [`src/config.js`](src/config.js). Add an object
 to the `LEVELS` array and the slider, keypad, and display update automatically.

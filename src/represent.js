@@ -457,6 +457,76 @@ export function renderWays(n) {
 }
 
 // ---------------------------------------------------------------------------
+// Plates — the "shared between" number, which counts containers not things
+// ---------------------------------------------------------------------------
+
+/**
+ * In "12 shared between 3", the three is not three cats — it is three plates.
+ * Drawing it as cats invites the child to read it as a quantity of the same
+ * stuff, so it is drawn as the empty places the things will go into.
+ */
+export function renderPlates(n, size) {
+  const wrap = shell('rep--plates', size);
+  const count = Math.min(n, MAX_DRAWN);
+  for (let i = 0; i < count; i++) {
+    const plate = document.createElement('span');
+    plate.className = 'plate pop-in';
+    plate.style.animationDelay = Math.min(i * 60, 500) + 'ms';
+    wrap.appendChild(plate);
+  }
+  return wrap;
+}
+
+// ---------------------------------------------------------------------------
+// Pairs — odd and even, by trying to pair everything up
+// ---------------------------------------------------------------------------
+
+/**
+ * Every number either pairs up exactly or has one left over. That is the whole
+ * of odd and even, and it is a thing you do rather than a fact you are told —
+ * so the app does it: two by two, and then you look at the end of the line.
+ */
+export function renderPairs(n, themeIndex) {
+  const palette = partColors();
+  const wrap = document.createElement('div');
+  wrap.className = 'pairs';
+
+  const whole = Math.floor(n / 2);
+  const leftOver = n % 2;
+
+  const grid = document.createElement('div');
+  grid.className = 'pairs__grid';
+  for (let i = 0; i < whole; i++) {
+    const pair = document.createElement('div');
+    pair.className = 'pair';
+    pair.style.borderColor = palette[0].solid;
+    pair.style.background = palette[0].soft;
+    for (let k = 0; k < 2; k++) {
+      const item = makeItem(themeIndex);
+      item.style.animationDelay = Math.min((i * 2 + k) * 45, 700) + 'ms';
+      pair.appendChild(item);
+    }
+    grid.appendChild(pair);
+  }
+  if (leftOver) {
+    const lone = document.createElement('div');
+    lone.className = 'pair pair--lone';
+    const item = makeItem(themeIndex);
+    item.style.animationDelay = Math.min(whole * 2 * 45, 700) + 'ms';
+    lone.appendChild(item);
+    grid.appendChild(lone);
+  }
+  wrap.appendChild(grid);
+
+  const verdict = document.createElement('div');
+  verdict.className = 'pairs__verdict ' + (leftOver ? 'pairs__verdict--odd' : 'pairs__verdict--even');
+  verdict.textContent = leftOver ? 'odd' : 'even';
+  wrap.appendChild(verdict);
+
+  return wrap;
+}
+
+// ---------------------------------------------------------------------------
 // Regrouping — where a new ten comes from
 // ---------------------------------------------------------------------------
 
@@ -645,6 +715,16 @@ export function renderCompare(bigger, smaller, diff) {
   }
 
   wrap.append(top.rowEl, bottom.rowEl);
+
+  // The symbol, introduced where it already means something: the child can
+  // see which bar is longer, so ">" is just the name for what they can see.
+  const symbolLine = document.createElement('div');
+  symbolLine.className = 'compare__symbol';
+  const gt = document.createElement('span');
+  gt.className = 'compare__gt';
+  gt.textContent = '>';
+  symbolLine.append(strong(bigger, palette[0].solid), gt, strong(smaller, palette[1].solid));
+  wrap.appendChild(symbolLine);
 
   const cap = document.createElement('div');
   cap.className = 'compare__cap';

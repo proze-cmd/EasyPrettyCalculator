@@ -14,23 +14,52 @@ with Capacitor** later.
 
 - **Cute buttons, normal calculator layout.** Big, tappable, candy-colored keys.
 - **Adjustable complexity by level** via a slider in **Settings** (⚙️).
-- **Tap the display to transform the number** — each tap shows it a new way:
-  - a big number in a fun color/font,
-  - **shapes** (e.g. 5 circles / stars / hearts),
-  - **cute objects** (5 🐶, then 5 🐰, then 5 ⭐ …),
-  - **ten-frames** (the classic math tool).
+- **Quantities are always shown in structured groups** — never a long line to
+  count one-by-one. See [How numbers are drawn](#-how-numbers-are-drawn).
+- **Tap the display to transform it** — each tap shows the same amount a new way:
+  the numeral paired with its quantity, different ways to split it apart
+  (9 as 5+4, as 3+3+3, as 6+3), colored shapes, and ten-frames.
 - **Numbers pop in** with bouncy animations, sparkles, and confetti on answers.
-- **Gentle sounds** (made with the Web Audio API — no files), with a mute toggle.
+- **Gentle sounds** (Web Audio, no files) and **spoken narration** (Web Speech,
+  no files) — it counts aloud "one, two, three…" and reads equations out loud.
+  Both have toggles.
 - **Stacked equations** once functions appear:
 
   ```
       5
-  +   5
+  +   4
   ───────
-  =  10
+  =   9
   ```
 
-  Tap the whole equation to see it as 5 🐰 on top of 5 🐰, a line, then 10 🐰.
+  Tap it to see 5 🐰 above 4 🐰, a line, then the answer showing **those same
+  5 and 4** side by side inside the 9 — so the parts stay visible in the whole.
+
+## 🔢 How numbers are drawn
+
+The visuals follow how children this age actually build number sense — seeing
+*how many* without counting (subitizing), anchored on the benchmarks 5 and 10.
+
+| Amount | How it's arranged | Why |
+|---|---|---|
+| **1–6** | dice / domino pip patterns | already familiar; recognised instantly |
+| **7–10** | a row of five + the remainder | builds the "five and some more" benchmark |
+| **11–20** | a full ten + the rest | ten becomes a unit |
+| **21–100** | groups of ten | place value (100 reads as *ten tens*) |
+| **any** | never more than **5 in a row**; each group on its own tinted plate | keeps every amount countable at a glance |
+
+Other pedagogy baked in:
+
+- **Multiple decompositions.** Tapping cycles a number through different splits
+  (9 → 5+4 → 3+3+3 → 6+3) so the same total can be seen more than one way.
+- **Part–whole colouring.** In `5 + 4`, the 5 is pink and the 4 is blue — and
+  the answer is that same pink 5 beside that same blue 4.
+- **Number bonds.** The whole-and-two-parts diagram from Singapore Math.
+- **Take-away made visible.** In `9 − 4`, the nine is drawn as 5 kept plus
+  4 faded and dashed out.
+- **Equal groups.** `3 × 4` is three groups of four, never a flat pile.
+- **Counting aloud** with rhythm, and **natural "loose parts"** (acorns, shells,
+  leaves) alongside the cartoon animals.
 
 ## 📚 Levels
 
@@ -65,13 +94,16 @@ index.html          # app shell
 styles.css          # all styling + animations (single bright theme)
 src/
   config.js         # LEVELS, emoji themes, palettes  ← tweak content here
+  arrange.js        # the grouping engine: how a number splits into groups (pure logic)
   state.js          # central state + localStorage persistence
   sound.js          # Web Audio blips (no audio files)
+  speech.js         # spoken narration via the Web Speech API (no audio files)
   animate.js        # pop / sparkle / confetti
-  represent.js      # renders a number as numeral / dots / objects / ten-frame
-  display.js        # arranges a number or a stacked equation + tap-to-transform
+  represent.js      # draws a number as structured groups / ten-frame / numeral
+  bond.js           # the part-part-whole number bond diagram
+  display.js        # the tap-through view journey + stacked equations
   calculator.js     # builds the keypad + all input handling / math
-  settings.js       # settings sheet (level slider + sound toggle)
+  settings.js       # settings sheet (level slider + sound/narration toggles)
   main.js           # wires it all together
 scripts/
   serve.mjs         # zero-dep dev server

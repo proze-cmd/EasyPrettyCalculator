@@ -1,12 +1,14 @@
 // settings.js
-// The settings sheet: a slider to choose the level and a toggle for sound.
-// Emits changes through callbacks so main.js can re-wire the calculator.
+// The settings sheet: a slider to choose the level, plus toggles for sounds
+// and spoken narration. Emits changes through callbacks so main.js can re-wire
+// the calculator.
 
 import { LEVELS } from './config.js';
-import { state, setLevel, setSound } from './state.js';
+import { state, setLevel, setSound, setSpeech } from './state.js';
 import { playTap } from './sound.js';
+import { say, cancelSpeech } from './speech.js';
 
-let overlay, slider, levelValue, levelName, levelBlurb, soundToggle;
+let overlay, slider, levelValue, levelName, levelBlurb, soundToggle, speechToggle;
 let onLevelChange = () => {};
 
 export function initSettings(handlers = {}) {
@@ -18,12 +20,13 @@ export function initSettings(handlers = {}) {
   levelName = document.getElementById('levelSliderName');
   levelBlurb = document.getElementById('levelSliderBlurb');
   soundToggle = document.getElementById('soundToggle');
+  speechToggle = document.getElementById('speechToggle');
 
   slider.min = '1';
   slider.max = String(LEVELS.length);
   slider.value = String(state.levelIndex + 1);
   syncSliderLabels(state.levelIndex);
-  syncSoundToggle();
+  syncToggles();
 
   // Open / close
   document.getElementById('settingsBtn').addEventListener('click', open);
@@ -44,11 +47,17 @@ export function initSettings(handlers = {}) {
     onLevelChange();
   });
 
-  // Sound toggle
   soundToggle.addEventListener('click', () => {
     setSound(!state.soundOn);
-    syncSoundToggle();
+    syncToggles();
     if (state.soundOn) playTap();
+  });
+
+  speechToggle.addEventListener('click', () => {
+    setSpeech(!state.speechOn);
+    syncToggles();
+    if (state.speechOn) say('Hello!');
+    else cancelSpeech();
   });
 }
 
@@ -56,7 +65,6 @@ function open() {
   overlay.classList.remove('hidden');
   overlay.setAttribute('aria-hidden', 'false');
   document.body.classList.add('sheet-open');
-  // keep the slider in sync in case level changed elsewhere
   slider.value = String(state.levelIndex + 1);
   syncSliderLabels(state.levelIndex);
 }
@@ -74,7 +82,9 @@ function syncSliderLabels(idx) {
   levelBlurb.textContent = lvl.blurb;
 }
 
-function syncSoundToggle() {
+function syncToggles() {
   soundToggle.setAttribute('aria-checked', state.soundOn ? 'true' : 'false');
   soundToggle.classList.toggle('on', state.soundOn);
+  speechToggle.setAttribute('aria-checked', state.speechOn ? 'true' : 'false');
+  speechToggle.classList.toggle('on', state.speechOn);
 }

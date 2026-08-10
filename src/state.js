@@ -1,6 +1,6 @@
 // state.js
 // A tiny central store for app state, with localStorage persistence for the
-// things worth remembering between visits (chosen level + sound preference).
+// things worth remembering between visits (level, sound, narration).
 
 import { LEVELS } from './config.js';
 
@@ -22,6 +22,7 @@ export const state = {
   // --- persisted preferences ---
   levelIndex: clampLevel(saved.levelIndex ?? 0), // 0-based index into LEVELS
   soundOn: saved.soundOn !== undefined ? !!saved.soundOn : true,
+  speechOn: saved.speechOn !== undefined ? !!saved.speechOn : true,
 
   // --- live calculator state (not persisted) ---
   // For "count" mode: just the currently shown value (or null = empty).
@@ -30,11 +31,11 @@ export const state = {
   // For "calc" mode: the equation being built.
   calc: freshCalc(),
 
-  // How the display is currently being drawn (advances on each display tap).
-  reprIndex: 0,
+  // Which view the display is showing (advances on each tap).
+  viewIndex: 0,
   objectThemeIndex: 0,
   numeralStyleIndex: 0,
-  dotStyleIndex: 0,
+  shapeIndex: 0,
 
   hasInteracted: false,
 };
@@ -62,7 +63,7 @@ export function setLevel(index) {
   // Changing level clears whatever was on the display.
   state.countValue = null;
   state.calc = freshCalc();
-  resetRepresentation();
+  resetView();
   persist();
 }
 
@@ -71,15 +72,25 @@ export function setSound(on) {
   persist();
 }
 
-export function resetRepresentation() {
-  state.reprIndex = 0;
+export function setSpeech(on) {
+  state.speechOn = !!on;
+  persist();
+}
+
+/** New content always starts at the beginning of the view journey. */
+export function resetView() {
+  state.viewIndex = 0;
 }
 
 export function persist() {
   try {
     localStorage.setItem(
       STORAGE_KEY,
-      JSON.stringify({ levelIndex: state.levelIndex, soundOn: state.soundOn })
+      JSON.stringify({
+        levelIndex: state.levelIndex,
+        soundOn: state.soundOn,
+        speechOn: state.speechOn,
+      })
     );
   } catch {
     /* storage may be unavailable (private mode) — that's ok */

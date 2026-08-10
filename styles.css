@@ -196,20 +196,32 @@ body.has-interacted .tap-hint {
   opacity: 0.55;
 }
 
-/* --- Number representations -------------------------------------------- */
-
-.single {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
+/* --- Number representations --------------------------------------------
+   Quantities are drawn as small structured groups (dice patterns, or a row of
+   five plus a remainder) so they can be recognised at a glance instead of
+   counted one by one. `--item` is the size of a single thing being counted;
+   everything else is derived from it.
+   ------------------------------------------------------------------------ */
 
 .rep {
   display: flex;
   align-items: center;
   justify-content: center;
 }
+.rep--big {
+  --item: clamp(24px, 8vw, 42px);
+  --gap: 6px;
+}
+.rep--pair {
+  --item: clamp(19px, 5.6vw, 30px);
+  --gap: 5px;
+}
+.rep--small {
+  --item: clamp(14px, 4.2vw, 23px);
+  --gap: 4px;
+}
 
+/* Numeral */
 .rep--numeral .numeral {
   display: inline-block;
   font-weight: 800;
@@ -221,6 +233,9 @@ body.has-interacted .tap-hint {
 .rep--big.rep--numeral .numeral {
   font-size: clamp(80px, 30vw, 170px);
 }
+.rep--pair.rep--numeral .numeral {
+  font-size: clamp(46px, 15vw, 88px);
+}
 .rep--small.rep--numeral .numeral {
   font-size: clamp(34px, 9vw, 58px);
   padding: 0.06em 0.22em;
@@ -231,33 +246,60 @@ body.has-interacted .tap-hint {
   color: #e03131 !important;
 }
 
-.rep--grid {
+/* Groups of items */
+.rep--grouped {
   flex-wrap: wrap;
-  gap: 8px;
+  gap: var(--group-gap, 10px) calc(var(--group-gap, 10px) + 4px);
   max-width: 100%;
   align-content: center;
 }
-.rep--big.rep--grid {
-  gap: 10px;
+.grp {
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
-.rep--big .dot,
-.rep--big .obj {
-  font-size: clamp(26px, 9vw, 46px);
+.grp--chip {
+  padding: var(--chip-pad, calc(var(--gap) + 2px));
+  border-radius: 18px;
+  border: 2px solid transparent;
 }
-.rep--small .dot,
-.rep--small .obj {
-  font-size: clamp(16px, 4.5vw, 26px);
+/* In subtraction, the part being taken away stays visible but clearly gone. */
+.grp--removed {
+  opacity: 0.34;
+  filter: grayscale(0.7);
+  border-style: dashed;
 }
-.rep--grid .group {
+
+/* Dice / domino patterns for 1-6 */
+.pipgrid {
   display: grid;
-  grid-template-columns: repeat(5, auto);
-  gap: 6px;
-  padding: 6px;
-  border-radius: 14px;
-  background: rgba(255, 214, 236, 0.35);
+  grid-template-columns: repeat(3, var(--item));
+  grid-auto-rows: var(--item);
+  gap: var(--gap);
 }
+.pip {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Rows of at most five for 7-10 */
+.rows {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap);
+  align-items: center;
+}
+.rows .row {
+  display: flex;
+  gap: var(--gap);
+}
+
 .dot,
 .obj {
+  width: var(--item);
+  height: var(--item);
+  font-size: calc(var(--item) * 0.86);
   line-height: 1;
   display: inline-flex;
   align-items: center;
@@ -265,6 +307,26 @@ body.has-interacted .tap-hint {
 }
 .dot {
   filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.12));
+}
+
+/* Numeral paired with the quantity it names */
+.paired {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Number bond (part-part-whole) */
+.rep--bond {
+  width: 100%;
+}
+.bond-svg {
+  width: 100%;
+  max-width: 320px;
+  height: auto;
+  display: block;
+  margin: 0 auto;
 }
 
 /* Ten-frames */
@@ -275,21 +337,13 @@ body.has-interacted .tap-hint {
 }
 .tenframe {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  grid-auto-rows: 1fr;
+  grid-template-columns: repeat(5, var(--item));
+  grid-auto-rows: var(--item);
   gap: 4px;
   padding: 6px;
   background: #fff;
   border: 3px solid #b8c9ff;
   border-radius: 14px;
-}
-.rep--big .tf-cell {
-  width: clamp(26px, 8vw, 42px);
-  height: clamp(26px, 8vw, 42px);
-}
-.rep--small .tf-cell {
-  width: clamp(16px, 4.5vw, 26px);
-  height: clamp(16px, 4.5vw, 26px);
 }
 .tf-cell {
   border: 2px solid #dbe4ff;
@@ -319,6 +373,11 @@ body.has-interacted .tap-hint {
   gap: 6px 12px;
   padding: 6px 4px;
   margin: auto;
+}
+/* Picture rows need more air than digits do, or the two addends read as one
+   undifferentiated clump. */
+.equation--visual {
+  gap: 12px 14px;
 }
 .equation__row {
   display: contents;
@@ -642,6 +701,25 @@ body.has-interacted .tap-hint {
   0% { transform: scale(0.2) rotate(-8deg); opacity: 0; }
   60% { transform: scale(1.12) rotate(3deg); opacity: 1; }
   100% { transform: scale(1) rotate(0); opacity: 1; }
+}
+
+/* The answer's two parts drop down and settle together, so the child sees the
+   addends arriving to make the whole. */
+.gather .grp {
+  animation: gather-in 0.5s cubic-bezier(0.2, 1.1, 0.4, 1) both;
+}
+.gather .grp:nth-child(2) {
+  animation-delay: 0.14s;
+}
+@keyframes gather-in {
+  0% {
+    transform: translateY(-28px) scale(0.82);
+    opacity: 0;
+  }
+  100% {
+    transform: none;
+    opacity: 1;
+  }
 }
 
 .pop-in {

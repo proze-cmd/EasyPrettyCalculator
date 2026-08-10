@@ -2,11 +2,12 @@
 // Builds the keypad for the current level and handles all button input:
 // number-picking in "count" levels, and equation-building in "calc" levels.
 
-import { state, currentLevel, freshCalc, resetRepresentation } from './state.js';
+import { state, currentLevel, freshCalc, resetView } from './state.js';
 import { NUMBER_BUTTON_COLORS } from './config.js';
 import { renderDisplay } from './display.js';
 import { pop, sparkle, confetti, pressFeedback } from './animate.js';
 import { playPop, playTap, playWin, playClear, unlockAudio } from './sound.js';
+import { say, saySequence, opWord, equationPhrase, cancelSpeech } from './speech.js';
 
 let keypadEl;
 let displayEl;
@@ -113,15 +114,33 @@ function opName(op) {
 // Count-mode input
 // -------------------------------------------------------------------------
 
+/**
+ * Counting out loud is how this age group actually learns to count — the
+ * rhythm of the words carries the sequence. So pressing 5 says "one, two,
+ * three, four, five" rather than just "five", and on the count-by-tens level
+ * it says "ten, twenty, thirty". Longer sequences would outstay their welcome,
+ * so anything past ten steps just states the number.
+ */
+function narrateCount(num) {
+  const level = currentLevel();
+  const upTo = level.keys.filter((k) => k <= num);
+  if (upTo.length > 1 && upTo.length <= 10 && upTo[upTo.length - 1] === num) {
+    saySequence(upTo.map(String));
+  } else {
+    say(String(num));
+  }
+}
+
 function pressCountNumber(num, btn) {
   unlockAudio();
   markInteracted();
   state.countValue = num;
-  resetRepresentation();
+  resetView();
   renderDisplay(true);
   pressFeedback(btn);
   playPop();
   sparkle(displayEl, 8);
+  narrateCount(num);
 }
 
 // -------------------------------------------------------------------------
@@ -141,17 +160,17 @@ function pressDigit(d, btn) {
 
   if (cc.phase === 'a') {
     if (cc.a.length < maxLen()) cc.a += String(d);
-    // avoid leading-zero numbers like "05"
     cc.a = normalizeEntry(cc.a);
   } else if (cc.phase === 'b') {
     if (cc.b.length < maxLen()) cc.b += String(d);
     cc.b = normalizeEntry(cc.b);
   }
 
-  resetRepresentation();
+  resetView();
   renderDisplay(true);
   if (btn) pressFeedback(btn);
   playPop();
+  say(cc.phase === 'a' ? cc.a : cc.b);
 }
 
 function normalizeEntry(str) {
@@ -181,10 +200,11 @@ function pressOp(op, btn) {
     }
   }
 
-  resetRepresentation();
+  resetView();
   renderDisplay(false);
   if (btn) pressFeedback(btn);
   playTap();
+  say(opWord(op));
 }
 
 function pressEquals(btn) {
@@ -199,7 +219,7 @@ function pressEquals(btn) {
   }
   c.result = compute(Number(c.a), c.op, Number(c.b));
   c.phase = 'done';
-  resetRepresentation();
+  resetView();
   renderDisplay(true);
   if (btn) pressFeedback(btn);
 
@@ -209,6 +229,7 @@ function pressEquals(btn) {
   playWin();
   confetti(44);
   sparkle(displayEl, 12);
+  say(equationPhrase(Number(c.a), c.op, Number(c.b), c.result));
 }
 
 function compute(a, op, b) {
@@ -236,10 +257,11 @@ function clearAll(btn) {
   } else {
     state.calc = freshCalc();
   }
-  resetRepresentation();
+  resetView();
   renderDisplay(false);
   if (btn) pressFeedback(btn);
   playClear();
+  cancelSpeech();
 }
 
 function backspace(btn) {
@@ -259,10 +281,11 @@ function backspace(btn) {
   } else if (c.phase === 'a') {
     c.a = c.a.slice(0, -1);
   }
-  resetRepresentation();
+  resetView();
   renderDisplay(false);
   if (btn) pressFeedback(btn);
   playClear();
+  cancelSpeech();
 }
 
 // -------------------------------------------------------------------------
@@ -277,7 +300,6 @@ function handlePhysicalKey(e) {
 
   if (level.mode === 'count') {
     if (/^[0-9]$/.test(e.key)) {
-      // Map a keypress to the matching level key if it exists.
       const num = Number(e.key);
       if (level.keys.includes(num)) pressCountNumber(num, null);
     }
@@ -289,7 +311,7 @@ function handlePhysicalKey(e) {
     pressDigit(Number(e.key), null);
   } else if (e.key === '+' && level.ops.includes('+')) {
     pressOp('+', null);
-  } else if ((e.key === '-') && level.ops.includes('−')) {
+  } else if (e.key === '-' && level.ops.includes('−')) {
     pressOp('−', null);
   } else if ((e.key === '*' || e.key.toLowerCase() === 'x') && level.ops.includes('×')) {
     pressOp('×', null);

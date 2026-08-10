@@ -1,42 +1,84 @@
 // display.js
-// Draws whatever should be in the big display panel and handles the
-// "tap to see it a new way" behaviour. Two shapes:
-//   - count mode: a single number, shown big
-//   - calc mode : a stacked equation  (a / op b / ——— / = result)
+// Draws the big display panel and handles "tap to see it another way".
+//
+// The tap order is a deliberate journey rather than a random shuffle. In the
+// counting levels it starts by pairing the numeral with a structured quantity
+// (symbol + amount together, the association those levels exist to build),
+// then explores different ways to break the same total apart. In the
+// calculation levels it starts with the equation as symbols — that's what the
+// child just typed — and taps down into what those symbols mean.
 
 import { state, currentLevel } from './state.js';
-import { REPRESENTATIONS, OBJECT_THEMES } from './config.js';
-import { renderNumber } from './represent.js';
+import { OBJECT_THEMES, PART_COLORS } from './config.js';
+import { renderQuantity, renderNumeral } from './represent.js';
+import { renderBond } from './bond.js';
+import {
+  groupsFor,
+  decompositionCount,
+  groupsForProduct,
+  describeGroups,
+} from './arrange.js';
 import { pop, sparkle } from './animate.js';
 import { playSwap } from './sound.js';
+import { say } from './speech.js';
 
 let displayEl;
 
 export function initDisplay() {
   displayEl = document.getElementById('display');
-  // Tap / click / keyboard to cycle the representation.
-  displayEl.addEventListener('click', cycleRepresentation);
+  displayEl.addEventListener('click', cycleView);
   displayEl.addEventListener('keydown', (e) => {
     if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault();
-      cycleRepresentation();
+      cycleView();
     }
   });
 }
 
-function currentMode() {
-  return REPRESENTATIONS[state.reprIndex % REPRESENTATIONS.length];
+// ---------------------------------------------------------------------------
+// What views are available right now
+// ---------------------------------------------------------------------------
+
+function calcParts() {
+  const c = state.calc;
+  const a = c.a === '' ? null : Number(c.a);
+  const b = c.b === '' ? null : Number(c.b);
+  return { c, a, b, result: c.result };
 }
 
-function styleIndices() {
-  return {
-    numeral: state.numeralStyleIndex,
-    object: state.objectThemeIndex,
-    dot: state.dotStyleIndex,
-  };
+/** Addition and subtraction both describe a whole and two parts. */
+function bondNumbers() {
+  const { c, a, b, result } = calcParts();
+  if (result === null || a === null || b === null) return null;
+  if (c.op === '+') return { whole: result, partA: a, partB: b };
+  if (c.op === '−' && result >= 0) return { whole: a, partA: result, partB: b };
+  return null;
 }
 
-// Is there anything on the display worth transforming?
+function viewCycle() {
+  const level = currentLevel();
+
+  if (level.mode === 'count') {
+    const n = state.countValue;
+    const views = [{ mode: 'paired' }];
+    const alts = Math.min(decompositionCount(n), 3);
+    for (let i = 0; i < alts; i++) views.push({ mode: 'objects', decomp: i });
+    views.push({ mode: 'dots', decomp: 0 });
+    views.push({ mode: 'tenframe' });
+    return views;
+  }
+
+  const views = [{ mode: 'numeral' }, { mode: 'objects' }, { mode: 'dots' }];
+  if (bondNumbers()) views.push({ mode: 'bond' });
+  views.push({ mode: 'tenframe' });
+  return views;
+}
+
+function currentView() {
+  const cycle = viewCycle();
+  return cycle[state.viewIndex % cycle.length];
+}
+
 function hasContent() {
   const level = currentLevel();
   if (level.mode === 'count') return state.countValue !== null;
@@ -44,44 +86,67 @@ function hasContent() {
   return c.a !== '' || c.op !== null || c.result !== null;
 }
 
-function cycleRepresentation() {
+// ---------------------------------------------------------------------------
+// Tapping
+// ---------------------------------------------------------------------------
+
+function cycleView() {
   if (!hasContent()) return;
-  state.reprIndex = (state.reprIndex + 1) % REPRESENTATIONS.length;
-  // When we land on a mode, also advance its sub-style so it feels fresh.
-  const mode = currentMode();
-  if (mode === 'objects') state.objectThemeIndex = (state.objectThemeIndex + 1) % OBJECT_THEMES.length;
-  if (mode === 'numeral') state.numeralStyleIndex = state.numeralStyleIndex + 1;
-  if (mode === 'dots') state.dotStyleIndex = state.dotStyleIndex + 1;
+  const cycle = viewCycle();
+  state.viewIndex = (state.viewIndex + 1) % cycle.length;
+
+  // Coming back around to the start earns a fresh set of objects, so the same
+  // number can be five puppies one moment and five acorns the next.
+  if (state.viewIndex === 0) {
+    state.objectThemeIndex = (state.objectThemeIndex + 1) % OBJECT_THEMES.length;
+    state.shapeIndex = state.shapeIndex + 1;
+    state.numeralStyleIndex = state.numeralStyleIndex + 1;
+  }
+
   playSwap();
   renderDisplay(true);
   sparkle(displayEl, 6);
+  narrateView();
 }
 
-/**
- * Redraw the display from current state.
- * @param {boolean} animate  pop the content in
- */
+/** Say what is now on screen, so the picture and the words arrive together. */
+function narrateView() {
+  const level = currentLevel();
+  const view = currentView();
+
+  if (level.mode === 'count') {
+    const n = state.countValue;
+    if (view.mode === 'objects' || view.mode === 'dots') {
+      const groups = groupsFor(n, view.decomp || 0);
+      say(groups.length > 1 ? `${describeGroups(groups)}. That's ${n}.` : String(n));
+    } else {
+      say(String(n));
+    }
+    return;
+  }
+
+  const bond = bondNumbers();
+  if (view.mode === 'bond' && bond) {
+    say(`${bond.whole} is ${bond.partA} and ${bond.partB}`);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Rendering
+// ---------------------------------------------------------------------------
+
 export function renderDisplay(animate = false) {
   const level = currentLevel();
   displayEl.innerHTML = '';
   displayEl.classList.remove('is-empty');
 
-  const mode = currentMode();
-  const idx = styleIndices();
-
   if (level.mode === 'count') {
-    if (state.countValue === null) {
-      showPlaceholder();
-    } else {
-      const wrap = document.createElement('div');
-      wrap.className = 'single';
-      wrap.appendChild(renderNumber(state.countValue, mode, idx, 'big'));
-      displayEl.appendChild(wrap);
-      markTappable();
-    }
+    renderCountMode();
   } else {
-    renderEquation(mode, idx);
+    renderCalcMode();
   }
+
+  displayEl.classList.toggle('tappable', hasContent());
 
   if (animate) {
     const content = displayEl.firstElementChild;
@@ -97,72 +162,163 @@ function showPlaceholder() {
   displayEl.appendChild(p);
 }
 
-function markTappable() {
-  // Only advertise tappability once there is something to tap.
-  displayEl.classList.toggle('tappable', hasContent());
+const styleOpts = () => ({
+  themeIndex: state.objectThemeIndex,
+  shapeIndex: state.shapeIndex,
+  numeralIndex: state.numeralStyleIndex,
+});
+
+// ---- counting levels ----
+
+function renderCountMode() {
+  const n = state.countValue;
+  if (n === null) {
+    showPlaceholder();
+    return;
+  }
+
+  const view = currentView();
+
+  if (view.mode === 'paired') {
+    // Numeral and quantity side by side: "this symbol means this many".
+    const wrap = document.createElement('div');
+    wrap.className = 'paired';
+    wrap.appendChild(renderNumeral(n, { size: 'pair', numeralIndex: state.numeralStyleIndex }));
+    wrap.appendChild(
+      renderQuantity(n, { mode: 'objects', decompIndex: 0, size: 'pair', ...styleOpts() })
+    );
+    displayEl.appendChild(wrap);
+    return;
+  }
+
+  displayEl.appendChild(
+    renderQuantity(n, {
+      mode: view.mode,
+      decompIndex: view.decomp || 0,
+      size: 'big',
+      ...styleOpts(),
+    })
+  );
 }
 
-// ---- equation rendering (calc mode) ----
+// ---- calculating levels ----
 
-function renderEquation(mode, idx) {
-  const c = state.calc;
+/** Every group in this quantity painted the same colour. */
+function mono(color, count) {
+  return Array.from({ length: count }, () => color);
+}
+
+function renderCalcMode() {
+  const { c, a, b, result } = calcParts();
 
   if (c.a === '' && c.op === null && c.result === null) {
     showPlaceholder();
     return;
   }
 
+  const view = currentView();
+
+  if (view.mode === 'bond') {
+    const bond = bondNumbers();
+    if (bond) {
+      displayEl.appendChild(renderBond(bond.whole, bond.partA, bond.partB));
+      return;
+    }
+  }
+
+  const visual = view.mode === 'objects' || view.mode === 'dots' || view.mode === 'tenframe';
   const table = document.createElement('div');
-  table.className = 'equation ' + (mode === 'numeral' ? 'equation--numeral' : 'equation--visual');
+  table.className = 'equation ' + (visual ? 'equation--visual' : 'equation--numeral');
 
-  // Row 1: first operand
-  table.appendChild(equationRow('', valueOf(c.a), mode, idx));
+  const colorA = PART_COLORS[0];
+  const colorB = PART_COLORS[1];
 
-  // Row 2: operator + second operand (show as soon as an operator is chosen)
+  // Is the first row showing a quantity we are about to take from?
+  const subtracting = c.op === '−' && result !== null && result >= 0 && b > 0 && a > 0;
+
+  // Row 1 — the first number.
+  table.appendChild(
+    row('', a, view, {
+      // In subtraction the child should see the part that leaves: the top row
+      // is split into "what stays" and "what goes", with the latter faded.
+      groups: subtracting ? [result, b].filter((x) => x > 0) : null,
+      groupColors: subtracting ? [colorA, colorB] : mono(colorA, 8),
+      removedGroups: subtracting && result > 0 ? [1] : subtracting ? [0] : null,
+    })
+  );
+
   if (c.op) {
-    const bShown = c.b === '' && c.phase === 'b' ? null : valueOf(c.b);
-    table.appendChild(equationRow(c.op, bShown, mode, idx));
+    // Row 2 — the operator and the second number.
+    const showB = c.b === '' && c.phase === 'b' ? null : b;
+    table.appendChild(row(c.op, showB, view, { groupColors: mono(colorB, 8) }));
 
-    // Underline
     const line = document.createElement('div');
     line.className = 'equation__line';
     table.appendChild(line);
 
-    // Row 3: = result
-    const resultVal = c.result !== null ? c.result : null;
-    table.appendChild(equationRow('=', resultVal, mode, idx, true));
+    // Row 3 — the answer, with the parts still visible inside the whole.
+    table.appendChild(row('=', result, view, resultOptions(c, a, b, result), true));
   }
 
   displayEl.appendChild(table);
-  markTappable();
 }
 
-function valueOf(str) {
-  if (str === '' || str === null || str === undefined) return null;
-  const n = Number(str);
-  return Number.isFinite(n) ? n : null;
+/**
+ * How the answer should be grouped. This is where addition earns its keep:
+ * 5 + 4 = 9 draws the nine as five pink and four blue, so the parts remain
+ * visible inside the total. Multiplication draws equal groups instead.
+ */
+function resultOptions(c, a, b, result) {
+  const colorA = PART_COLORS[0];
+  const colorB = PART_COLORS[1];
+
+  if (result === null) return {};
+
+  if (c.op === '+' && a > 0 && b > 0) {
+    return { groups: [a, b], groupColors: [colorA, colorB], gather: true };
+  }
+  if (c.op === '×' && a > 0 && b > 0) {
+    const groups = groupsForProduct(a, b);
+    return { groups, groupColors: groups.map((_, i) => PART_COLORS[i % PART_COLORS.length]) };
+  }
+  return { groupColors: mono(colorA, 8) };
 }
 
-function equationRow(sign, value, mode, idx, isResult = false) {
-  const row = document.createElement('div');
-  row.className = 'equation__row' + (isResult ? ' equation__row--result' : '');
+function row(sign, value, view, opts = {}, isResult = false) {
+  const el = document.createElement('div');
+  el.className = 'equation__row' + (isResult ? ' equation__row--result' : '');
 
   const signEl = document.createElement('div');
   signEl.className = 'equation__sign';
   signEl.textContent = sign || '';
-  row.appendChild(signEl);
+  el.appendChild(signEl);
 
   const valEl = document.createElement('div');
   valEl.className = 'equation__val';
-  if (value === null) {
-    // Waiting for input / result: show a soft blank.
-    const q = document.createElement('span');
-    q.className = 'equation__blank';
-    q.textContent = isResult ? '?' : '';
-    valEl.appendChild(q);
+
+  if (value === null || value === undefined) {
+    const blank = document.createElement('span');
+    blank.className = 'equation__blank';
+    blank.textContent = isResult ? '?' : '';
+    valEl.appendChild(blank);
   } else {
-    valEl.appendChild(renderNumber(value, mode, idx, 'small'));
+    const mode = view.mode === 'bond' ? 'numeral' : view.mode;
+    const quantity = renderQuantity(value, {
+      mode,
+      size: 'small',
+      decompIndex: 0,
+      groups: opts.groups || null,
+      groupColors: opts.groupColors || null,
+      removedGroups: opts.removedGroups || null,
+      // Give each row of a visual equation its own coloured plate so the parts
+      // stay traceable from the numbers above into the answer below.
+      forceChip: mode === 'objects' || mode === 'dots',
+      ...styleOpts(),
+    });
+    if (opts.gather) quantity.classList.add('gather');
+    valEl.appendChild(quantity);
   }
-  row.appendChild(valEl);
-  return row;
+
+  el.appendChild(valEl);
+  return el;
 }

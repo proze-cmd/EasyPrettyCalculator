@@ -27,6 +27,7 @@ import {
   renderBlockNumeral,
   renderPad,
   renderCircled,
+  renderTrack,
 } from './represent.js';
 import { renderBond } from './bond.js';
 import {
@@ -268,30 +269,38 @@ function viewCycle() {
     const n = state.countValue;
     const drawable = n <= MAX_DRAWN;
     const views = [{ mode: 'paired' }];
+
     // Which way of splitting the number is on offer this time round. The
     // journey is a loop, so going round again shows ten as six and four where
     // last time it was five and five — the same total, a different pair.
     const splits = decompositionCount(n);
     const decomp = splits > 1 ? 1 + (state.splitIndex % (splits - 1)) : 0;
     if (drawable && splits > 1) {
-      // The same split twice over: once on coloured plates, where each part has
-      // an identity of its own, and once as plain identical things with a ring
-      // drawn round each handful. The second is the one that says the nine did
-      // not change — only the way we chose to look at it did.
-      // The split twice over: rearranged onto coloured plates, and then simply
-      // circled where it stands. The second is the one that says nothing about
-      // the nine changed — only the way we chose to look at it.
-      views.push({ mode: 'objects', decomp });
-      views.push({ mode: 'ringed', decomp });
+      if (level.splitTwice) {
+        // Count to 10 sets the two against each other: once on coloured plates,
+        // where each part has an identity of its own, and once as plain
+        // identical things with a ring drawn round each handful. The second is
+        // the one that says the nine did not change — only how we looked at it.
+        views.push({ mode: 'objects', decomp });
+        views.push({ mode: 'ringed', decomp });
+      } else {
+        // Elsewhere one per lap is plenty; the next lap shows the other.
+        views.push({ mode: state.splitIndex % 2 ? 'ringed' : 'objects', decomp });
+      }
     }
-    // The symbol on its own, in a colour that is different every time round.
-    if (level.emblems) views.push({ mode: 'block' });
-    // And the shape their own hand has to make.
-    if (level.emblems) views.push({ mode: 'pad' });
-    // Where the number lives outside of maths — one sun, five fingers.
-    if (level.emblems && NUMBER_EMBLEMS[n]) views.push({ mode: 'emblem' });
     // Pairing up belongs on the level where counting is pairing.
     if (drawable && level.pairs) views.push({ mode: 'pairs' });
+    // The symbol on its own, recoloured every lap — and then the shape their
+    // own hand has to make. Every counting level gets both: learning to write
+    // twenty is exactly what counting by tens is for.
+    views.push({ mode: 'block' });
+    views.push({ mode: 'pad' });
+    // Where this number falls in the count. Only where counting goes in steps;
+    // on Count to 10 the sequence is just the numbers themselves.
+    if (level.track) views.push({ mode: 'track' });
+    // Where the number lives outside of maths — one sun, five fingers. Count to
+    // 10 only, because there is no sun with twenty in it.
+    if (level.emblems && NUMBER_EMBLEMS[n]) views.push({ mode: 'emblem' });
     views.push({ mode: 'rods' });
     // Past the draw limit the paired view is already showing ten-frames, so a
     // second ten-frame view would just be the same picture again.
@@ -390,6 +399,18 @@ function narrateView() {
     if (view.mode === 'emblem') {
       const name = emblemName(n);
       say(name ? `${n}. Like ${name}.` : String(n));
+      return;
+    }
+    if (view.mode === 'track') {
+      // Saying the steps out loud *is* the view: the rhythm of the count is
+      // what a child is learning here, not the numeral at the end of it.
+      const steps = level.keys.filter((k) => k <= n).map(String);
+      // A long count gets its first few steps and then the destination, said in
+      // words — an ellipsis is a typographic mark, and a speech engine either
+      // swallows it or reads it out as "dot dot dot".
+      saySequence(
+        steps.length > 8 ? [...steps.slice(0, 3), 'all the way to', String(n)] : steps,
+      );
       return;
     }
     if (view.mode === 'block') {
@@ -587,6 +608,11 @@ function renderCountMode() {
 
   if (view.mode === 'pad') {
     displayEl.appendChild(renderPad(n));
+    return;
+  }
+
+  if (view.mode === 'track') {
+    displayEl.appendChild(renderTrack(currentLevel().keys, n));
     return;
   }
 

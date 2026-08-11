@@ -71,19 +71,55 @@ export const DIGIT_STROKES = {
   9: [
     'M80 45 C80 28 67 15 50 15 C33 15 20 28 20 45 C20 62 33 75 50 75 C67 75 80 62 80 45 L80 135',
   ],
-  // Ten is two numerals side by side, so it is written as one then zero. The
-  // grid is wider for it; `padWidth` says so.
-  10: [
-    'M30 18 L30 132',
-    'M82 18 C61 18 51 45 51 76 C51 107 61 132 82 132 C103 132 113 107 113 76 C113 45 103 18 82 18',
-  ],
 };
 
-/** How wide the writing grid is for this numeral (two digits need more room). */
-export function padWidth(n) {
-  return n === 10 ? 130 : 100;
+/**
+ * How far apart two numerals sit. A digit's ink spans about x=14..86 of its own
+ * hundred-wide grid, so this leaves a clear gap between one and the next.
+ */
+const ADVANCE = 96;
+
+/**
+ * Shift a path sideways by rewriting its numbers.
+ *
+ * The obvious way — an SVG transform — would be wrong here: `getPointAtLength`
+ * reports untransformed coordinates, and the tracing works by comparing a
+ * finger's position against exactly those. Moving the numbers themselves keeps
+ * the path and the maths in the same space.
+ *
+ * Safe because every stroke in this file is absolute M / L / C, so every
+ * coordinate pair is (x, y) and every even number is an x.
+ */
+function shiftPath(d, dx) {
+  return d
+    .replace(/([MLC])([^MLCZ]*)/g, (_, cmd, nums) => {
+      const parts = nums.trim().split(/[\s,]+/).filter(Boolean).map(Number);
+      return cmd + parts.map((v, i) => (i % 2 === 0 ? v + dx : v)).join(' ') + ' ';
+    })
+    .trim();
 }
 
+const digitsOf = (n) => String(Math.round(n)).split('').map(Number);
+
+/**
+ * The strokes for a whole number, in the order a hand makes them.
+ *
+ * A two-digit number is just its digits written left to right, so twenty is a
+ * two and then a zero — three movements in all. That is exactly what the
+ * skip-counting levels are asking a child to learn to write.
+ */
 export function strokesFor(n) {
-  return DIGIT_STROKES[n] || null;
+  const digits = digitsOf(n);
+  const out = [];
+  digits.forEach((d, i) => {
+    const strokes = DIGIT_STROKES[d];
+    if (!strokes) return;
+    strokes.forEach((path) => out.push(i === 0 ? path : shiftPath(path, i * ADVANCE)));
+  });
+  return out.length ? out : null;
+}
+
+/** How wide the writing grid is — one hundred per digit, less the overlap. */
+export function padWidth(n) {
+  return (digitsOf(n).length - 1) * ADVANCE + 100;
 }

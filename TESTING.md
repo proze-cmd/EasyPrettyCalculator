@@ -111,6 +111,27 @@ promise, and a tap must keep it.**
   - **A rect already includes the transform.** Adding the shift again when
     checking double-counts it, and reports a miscentring that isn't there —
     which is exactly how this fix first looked like it had failed.
+- **A view that passes every check can still be the wrong picture.** The track
+  passed everything — right steps, right colours, fits the panel — and was a
+  copy of the keypad six inches below it. Nothing measurable was wrong with it.
+  **Screenshot the whole page, not the panel**: the panel crop hid the very
+  thing that made it wrong.
+- **`vw`/`vh` are a bad guess at how big something in a panel is.** The track's
+  numerals were sized from the viewport and came out small in landscape, where
+  the panel is wide but the viewport is short. Size from the element's own
+  container (`container-type: inline-size` + `cqw`) and it holds everywhere.
+- **An SVG's box is not its drawing.** `.pad__sheet` used to be capped in height
+  only, so its box stopped matching its viewBox and the drawing was letterboxed
+  and centred inside it. Mapping a pointer to SVG coordinates by proportion of
+  `getBoundingClientRect()` was then wrong by up to **19 grid units** on a
+  landscape phone — inside the 30-unit "is the finger on the line" tolerance, so
+  it still worked, which is why it went unnoticed: the ink followed a finger
+  that was visibly beside the line. `getScreenCTM().inverse()` knows the real
+  mapping. **Measure the error, don't infer it from the letterbox slack** — the
+  slack was 84px and the actual error was a fifth of that.
+- **A test that drives the pad must map its points the same way.** Driving it
+  through `.pad`'s box (which has padding) makes strokes silently fail to fill
+  and looks exactly like an app bug — that cost an hour.
 
 ---
 
@@ -151,6 +172,13 @@ seeing a number. **8 views**, in this order:
     group briefly *appears*.
 
 ### The writing pad — check all of this
+- **The paper is the shape of the number.** A three sits on a tall sheet, a
+  hundred on a wide one, and the guide rules reach both edges. If the rules stop
+  short of the paper, `--pad-ar` isn't reaching the CSS and the drawing is
+  letterboxed inside a box that doesn't match it.
+- **Trace it on a landscape phone**, not just upright, and watch *where the ink
+  appears relative to the finger*. That is where the sheet is furthest out of
+  proportion with its box, and where the finger and the ink drifted apart.
 - **Guides**: three rules, top and bottom solid, the middle one dashed.
 - **Stroke counts** (from a handwriting worksheet, not a typeface):
 
@@ -197,16 +225,40 @@ seeing a number. **8 views**, in this order:
 - Press **1** → no "ways to make 1" (there are none).
 - Rods: one 9-long dark-blue bar with a break after the fifth. Not 5+4.
 
+### Levels 2–4 — the skip-counting levels
+
+These share the block numeral, the writing pad and the **track** with Level 1.
+Anything checked under "The writing pad" applies here too — with more digits.
+
+- **The track.** Stepping stones, five to a row. Stones before the pressed
+  number are solid with a solid path behind them; the pressed one is filled and
+  pulsing; the rest are **dashed outlines on a dotted path**. Stones arrive one
+  after another in counting order, not all at once.
+- The track must **not** look like the keypad underneath it. That was the first
+  version — a five-across grid of rounded chips, which a child reads as a
+  second, broken keypad. If it ever drifts back towards squares in a grid with
+  no path between them, it has regressed.
+- No path stub hangs off the right-hand end of a row, or off the last stone.
+- Narration says the steps aloud, up to the one pressed.
+- **Multi-digit pad.** Press **35** → three strokes: the 3 (one), then the 5
+  (two). **100** → three strokes, one per digit. Both digits sit on the same
+  ruled sheet, written left to right. The numbered start dots for the 5 sit on
+  top of each other — both its strokes start at the same corner — which matches
+  the worksheet and is not a bug.
+
 ### Level 2 — Count by 2s
 - Press **14** → pairs view offered (it is not offered on Count to 10).
 - 14 → **7 pairs, none left, "even"**. 7 → 3 pairs + one in a dashed ring, "odd".
 
 ### Level 3 — Count by 5s
 - Press **35** → seven ten-frames' worth; no loose things to touch.
+- Rods: three gold ten-bars and one light-blue five — not seven fives.
 
 ### Level 4 — Count by 10s
 - Press **100** → numeral + **ten ten-frames**, no loose objects (I2).
-- **2 views only** (paired, rods) — no duplicate ten-frame view.
+- **Five views** (paired, block, pad, track, rods). It used to be two. Writing a
+  hundred and placing it in the count don't depend on drawing a hundred things,
+  so they're offered here even though the quantity views aren't.
 - Touching a cell must **turn the page**, not count (I2/I9). Hint must say
   "Tap to see it another way", not "Touch each one".
 
@@ -348,3 +400,19 @@ telling.** A pre-reader must be able to get it with the sound off.
   thing they exist to show. They keep the break after the fifth bead instead.
 - "Ways to make" lives on **solved sums**, not the counting levels.
 - Pressing a second operator **shows the answer** rather than chaining silently.
+- **The track's stones are circles joined by a path, not chips in a grid.** The
+  keypad is chips in a grid; a second one of those in the panel above reads as
+  a broken keypad, not as a count. Any redesign has to stay obviously unlike it.
+- **The block numeral and the writing pad are on every counting level**, even
+  where the quantity can't be drawn. Writing a hundred, and knowing where it
+  falls in the count, don't depend on drawing a hundred things.
+
+---
+
+## Known, not yet fixed
+
+- **320×568 (iPhone SE), Level 8, `27 + 18`.** The ten-frame views of the
+  answer overflow the display by ~17–40px — the panel is only 200px tall there,
+  because that level's keypad is the tallest in the app. Content is centred, so
+  it spills equally top and bottom rather than cutting off the end. Predates
+  the level 2–4 work; reproduced identically on the previous commit.

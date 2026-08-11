@@ -966,7 +966,9 @@ body.theme-calm .pairs__verdict--odd {
 .block-num {
   font-weight: 800;
   line-height: 0.95;
-  font-size: clamp(96px, min(44vw, 34vh), 300px);
+  /* Divided by how many numerals there are, so a hundred fits the panel the
+     same way a nine does. */
+  font-size: clamp(56px, min(calc(46vw / var(--digits, 1)), 34vh), calc(300px / var(--digits, 1)));
   padding: 0.1em 0.24em;
   border-radius: 0.18em;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.14);
@@ -982,21 +984,28 @@ body.theme-calm .pairs__verdict--odd {
 
 .rep--pad { width: 100%; }
 .pad {
+  /* The panel it sits in is shorter than the viewport — a phone at 320x568
+     leaves barely 300px — so the sheet is bounded well under half of it. */
+  --pad-h: min(38vh, 320px);
+  --pad-side: clamp(12px, 5vw, 30px);
   width: 100%;
-  max-width: 420px;
+  /* A hundred is nearly three times as wide as a three, and the paper follows.
+     Capping only the height would leave a three floating in the middle of a
+     wide sheet with its guide rules stopping short of the edges — and, worse,
+     the drawing letterboxed inside a box that doesn't match it. `--pad-ar` is
+     the sheet's own width/height, set when it is drawn. */
+  max-width: min(420px, calc(var(--pad-h) * var(--pad-ar, 0.8) + 2 * var(--pad-side)));
   border-radius: 16px;
   background: #fdfcf4;
   border: 2px solid #e6e2d2;
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.1);
-  padding: clamp(8px, 2.5vh, 18px) clamp(12px, 5vw, 30px);
+  padding: clamp(8px, 2.5vh, 18px) var(--pad-side);
 }
 .pad__sheet {
   display: block;
   width: 100%;
   height: auto;
-  /* The panel it sits in is shorter than the viewport — a phone at 320x568
-     leaves barely 300px — so the sheet is bounded well under half of it. */
-  max-height: min(38vh, 320px);
+  max-height: var(--pad-h);
   touch-action: none; /* the finger is drawing, not scrolling */
 }
 .pad__rule {
@@ -1149,6 +1158,138 @@ body.theme-calm .pad--done .pad__ink { stroke: #5c8a5e; }
 body.theme-calm .ring__path { stroke: rgba(90, 74, 63, 0.62); }
 @media (prefers-reduced-motion: reduce) {
   .ring__path { animation: none; stroke-dashoffset: 0; }
+}
+
+/* --- Where the number sits in the count ---------------------------------
+   Stepping stones joined by a path, five to a row so the pattern in the last
+   digit is unmissable. Stones already counted are solid and the path behind
+   them is solid; the ones still to come are dashed outlines on a dotted path.
+   Round, joined and staggered on purpose: a five-across grid of rounded chips
+   is what the keypad below already looks like.
+   ------------------------------------------------------------------------ */
+
+.rep--track {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+.track {
+  /* The trail between stones is drawn in the column gap, so the two have to
+     agree on one number. */
+  --track-gap: clamp(11px, 4.6vw, 28px);
+  --track-walked: #ff6b9d;
+  --track-waiting: rgba(74, 58, 85, 0.26);
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: clamp(14px, 5.6vw, 34px) var(--track-gap);
+  width: 100%;
+  /* The stones are circles, so their size — and the height of the whole trail —
+     comes from the width. On a phone that is the panel; on a tablet it has to
+     be allowed to grow, or the trail sits in the middle of a lot of nothing. */
+  max-width: min(100%, 560px);
+}
+.track__step {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  border: 3px dashed var(--track-waiting);
+  font-weight: 800;
+  color: var(--ink-soft);
+  background: rgba(74, 58, 85, 0.03);
+  /* Stones arrive one after another, so the trail lays itself down in
+     counting order instead of appearing all at once. */
+  animation: trackIn 340ms cubic-bezier(0.34, 1.4, 0.64, 1) backwards;
+}
+.track__num {
+  /* Three digits have to live inside the same stone as one. */
+  font-size: clamp(13px, min(4.2vw, 3.4vh), 34px);
+  /* Only the long ones need tightening; a lone digit is left alone. */
+  letter-spacing: calc((var(--digits, 1) - 1) * -0.03em);
+}
+/* A stone's size comes from the width it is given, not from the viewport, so
+   in landscape the viewport-based guess above ends up small inside a stone
+   that is perfectly big. Where it is available, size the numeral from the
+   stone itself and it stays the same fraction of it everywhere. */
+@supports (container-type: inline-size) {
+  .track__step { container-type: inline-size; }
+  .track__num { font-size: 34cqw; }
+}
+.track__step--done {
+  border-style: solid;
+  border-color: var(--track-walked);
+  background: rgba(255, 107, 157, 0.18);
+  color: #c2185b;
+}
+.track__step--here {
+  border-style: solid;
+  background: var(--track-walked);
+  border-color: #ff4d94;
+  color: #fff;
+  animation:
+    trackIn 340ms cubic-bezier(0.34, 1.4, 0.64, 1) backwards,
+    trackHere 1.6s 500ms ease-in-out infinite;
+}
+/* The path itself. Solid where the count has already walked, dotted ahead. */
+.track__step--linked::after {
+  content: '';
+  position: absolute;
+  left: calc(100% + 3px);
+  top: 50%;
+  width: calc(var(--track-gap) - 6px);
+  border-top: 3px dotted var(--track-waiting);
+  transform: translateY(-50%);
+}
+.track__step--walked::after {
+  border-top-style: solid;
+  border-top-color: var(--track-walked);
+}
+@keyframes trackIn {
+  from {
+    opacity: 0;
+    transform: translateY(9px) scale(0.7);
+  }
+}
+@keyframes trackHere {
+  0%,
+  100% {
+    box-shadow: 0 4px 14px rgba(255, 77, 148, 0.4);
+  }
+  50% {
+    box-shadow:
+      0 4px 14px rgba(255, 77, 148, 0.4),
+      0 0 0 9px rgba(255, 107, 157, 0.22);
+  }
+}
+body.theme-calm .track {
+  --track-walked: #c2705a;
+  --track-waiting: rgba(90, 74, 63, 0.26);
+}
+body.theme-calm .track__step--done {
+  background: rgba(194, 112, 90, 0.18);
+  color: #a4543c;
+}
+body.theme-calm .track__step--here {
+  border-color: #b5654e;
+  color: #fff;
+}
+body.theme-calm .track__step--here {
+  animation:
+    trackIn 340ms cubic-bezier(0.34, 1.4, 0.64, 1) backwards,
+    trackHereCalm 1.6s 500ms ease-in-out infinite;
+}
+@keyframes trackHereCalm {
+  0%,
+  100% {
+    box-shadow: 0 4px 14px rgba(181, 101, 78, 0.4);
+  }
+  50% {
+    box-shadow:
+      0 4px 14px rgba(181, 101, 78, 0.4),
+      0 0 0 9px rgba(194, 112, 90, 0.22);
+  }
 }
 
 /* --- Meeting the number ------------------------------------------------
@@ -1847,6 +1988,7 @@ body.theme-calm .btn-back   { background: linear-gradient(180deg,#eae5db,#d3ccbf
   .pop-anim,
   .pop-in,
   .gather .grp,
+  .track__step,
   .btn--refused,
   .confetti-bit,
   .spark {

@@ -933,6 +933,8 @@ export function renderBlockNumeral(n, styleIndex) {
   block.className = 'block-num pop-anim';
   block.style.color = style.fg;
   block.style.background = style.bg;
+  // A hundred is three numerals wide. Sized for one, it runs off the side.
+  block.style.setProperty('--digits', String(n).length);
 
   // The digit gets its own element: the block is already carrying the pop
   // animation's transform, and centring needs a transform of its own.
@@ -973,6 +975,8 @@ export function renderPad(n) {
 
   const pad = document.createElement('div');
   pad.className = 'pad';
+  // How wide the paper wants to be for its height — see `.pad` in the stylesheet.
+  pad.style.setProperty('--pad-ar', String((W + 20) / H));
 
   const svg = document.createElementNS(NS, 'svg');
   svg.setAttribute('viewBox', `-10 0 ${W + 20} ${H}`);
@@ -1196,7 +1200,30 @@ function offerTrace(svg, inks, knob, lengths, place, fill, n) {
     return { at: best, off: Math.sqrt(bestD) };
   };
 
+  /**
+   * Where on the sheet is this finger?
+   *
+   * Not a proportion of the element's box: an SVG whose box doesn't match its
+   * viewBox letterboxes the drawing and centres it, and taking a proportion of
+   * the box then lands somewhere the ink isn't — measured at up to 19 grid
+   * units out on a landscape phone, against a tolerance of 30. Inside the
+   * tolerance, so it still worked, but the ink followed a finger that was
+   * visibly beside the line. `getScreenCTM()` already knows the real mapping,
+   * letterboxing and all, so the finger and the ink agree exactly.
+   *
+   * The sheet no longer letterboxes either (see `--pad-ar` in the stylesheet),
+   * which makes this exact today — but the two fixes are independent, and this
+   * is the one that has to hold if the sheet's proportions ever change again.
+   */
   const toGrid = (e) => {
+    const ctm = svg.getScreenCTM();
+    if (ctm) {
+      const pt = svg.createSVGPoint();
+      pt.x = e.clientX;
+      pt.y = e.clientY;
+      const g = pt.matrixTransform(ctm.inverse());
+      return { x: g.x, y: g.y };
+    }
     const box = svg.getBoundingClientRect();
     const vb = svg.viewBox.baseVal;
     return {
@@ -1385,4 +1412,59 @@ function drawRings(stage, runs, itemCount) {
     svg.appendChild(rect);
     stage.appendChild(svg);
   });
+}
+
+// ---------------------------------------------------------------------------
+// Where this number sits in the count
+// ---------------------------------------------------------------------------
+
+/**
+ * The whole count laid out, with everything up to this number filled in.
+ *
+ * These levels are not really about *how many* — that is what Count to 10 is
+ * for — they are about where a number falls in a sequence you say out loud.
+ * Thirty-five means nothing on its own; it means "the seventh five".
+ *
+ * Drawn as stepping stones joined by a path, five to a row so the pattern in
+ * the last digit is impossible to miss. The stones already counted are solid
+ * with a solid path behind them, this one is standing on its stone, and the
+ * road ahead is dashed. They arrive one after another, in counting order.
+ *
+ * Stones and a path rather than a row of buttons on purpose: the first version
+ * was a five-across grid of rounded chips, which is precisely what the keypad
+ * underneath it looks like, so it read as a second, broken keypad.
+ */
+export function renderTrack(keys, n) {
+  const wrap = shell('rep--track', 'big');
+  const grid = document.createElement('div');
+  grid.className = 'track';
+  const PER_ROW = 5;
+
+  keys.forEach((k, i) => {
+    const step = document.createElement('span');
+    step.className = 'track__step';
+    if (k < n) step.classList.add('track__step--done');
+    if (k === n) step.classList.add('track__step--here');
+
+    // The path runs between stones in a row — not off the end of one, and not
+    // off the end of the count. It is solid behind the walker, dotted ahead.
+    const endsRow = (i + 1) % PER_ROW === 0;
+    if (!endsRow && i !== keys.length - 1) {
+      step.classList.add('track__step--linked');
+      if (k < n) step.classList.add('track__step--walked');
+    }
+
+    const num = document.createElement('span');
+    num.className = 'track__num';
+    num.style.setProperty('--digits', String(String(k).length));
+    num.textContent = String(k);
+    step.appendChild(num);
+    step.style.animationDelay = Math.min(i * 70, 640) + 'ms';
+    grid.appendChild(step);
+  });
+
+  wrap.appendChild(grid);
+  wrap.setAttribute('role', 'img');
+  wrap.setAttribute('aria-label', `${n} in the count: ${keys.filter((k) => k <= n).join(', ')}`);
+  return wrap;
 }

@@ -26,6 +26,10 @@ export const LEVELS = [
     // numbers one to ten are the whole subject. The skip-counting levels run
     // past ten immediately, and there is no sun with twenty in it.
     emblems: true,
+    // And this is the level where the two ways of splitting are set against
+    // each other — rearranged onto plates, then circled where they stand.
+    // Elsewhere one of them per lap is plenty.
+    splitTwice: true,
   },
   {
     id: 2,
@@ -38,6 +42,9 @@ export const LEVELS = [
     // Counting in twos is counting in pairs, so this is where pairing up —
     // and finding the odd one out — belongs.
     pairs: true,
+    // Where a number *is* in the count is the subject of these levels, so
+    // they get the track: every step from the first one up to this one.
+    track: true,
   },
   {
     id: 3,
@@ -47,6 +54,7 @@ export const LEVELS = [
     keys: [5, 10, 15, 20, 25, 30, 35, 40, 45, 50],
     ops: [],
     maxValue: 50,
+    track: true,
   },
   {
     id: 4,
@@ -56,6 +64,7 @@ export const LEVELS = [
     keys: [10, 20, 30, 40, 50, 60, 70, 80, 90, 100],
     ops: [],
     maxValue: 100,
+    track: true,
   },
   {
     id: 5,

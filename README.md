@@ -89,12 +89,21 @@ Other pedagogy baked in:
   colours in a rainbow. Waldorf introduces a number by its character before its
   quantity, so on *Count to 10* one tap shows where that number lives in the
   world. No words — just the thing and the numeral.
+- **Where it sits in the count.** On the skip-counting levels the whole count is
+  laid out as stepping stones joined by a path — five to a row, so the pattern
+  in the last digit is unmissable. The stones already counted are solid and the
+  path behind them is solid; the ones still to come are dashed outlines on a
+  dotted trail, and the number you pressed is standing on its stone. Thirty-five
+  doesn't mean much on its own; it means *the seventh five*, and this is the view
+  that says so. The stones arrive one after another, in counting order, and the
+  narration says the steps aloud.
 - **The symbol, twice.** Once as a block of colour big enough to fill the panel
   — a new colour each time round, so the numeral is the thing that stays the
   same while everything about how it looks changes.
 - **And then you write it.** On a real handwriting guide — solid line top and
-  bottom, dashed line down the middle — the numeral draws itself the way a hand
-  makes it, with the pen visible and a numbered dot where each stroke begins.
+  bottom, dashed line down the middle, on a sheet cut to the shape of the number
+  — the numeral draws itself the way a hand makes it, with the pen visible and a
+  numbered dot where each stroke begins.
   Then the pen runs **back the way it came**, unwriting the numeral, and hands
   over: **drag the dot round the shape and the ink follows your finger**, stroke
   by stroke, turning green when you finish. Wander off the line and it waits for
@@ -116,6 +125,10 @@ Other pedagogy baked in:
   | 8 | one | from the top, left, round both loops |
   | 9 | one | halfway down the bowl, circle back left, then straight down |
   | 0 | one | from the top, left, all the way round |
+
+  Numbers of more than one digit are written digit by digit, left to right, on
+  one long sheet — so *thirty-five* is a three and then a five, three strokes in
+  the order a hand makes them, all the way up to a hundred.
 
   It's why Montessori gives children sandpaper numerals to trace: the making is
   the part a hand has to learn.
@@ -179,6 +192,12 @@ invariants that must never break, and the measurement traps that have fooled us.
 | 8  | Big Numbers to 100 | Two-digit add/subtract, place value          |
 | 9  | Equal Groups       | Multiplication as equal groups, up to 20     |
 | 10 | Fair Shares        | Division as sharing out evenly               |
+
+Levels 2–4 aren't only about *how many* — they're about where a number falls in
+a sequence you say out loud. They used to get only the pictures that survive
+being big (ten-frames and rods), which left *Count by 10s* with two views and
+nothing to do with a hundred. They now share what *Count to 10* learned: the
+number as a block of colour, the writing pad, and the stepping-stone track.
 
 Levels are **data-driven** — see [`src/config.js`](src/config.js). Add an object
 to the `LEVELS` array and the slider, keypad, and display update automatically.

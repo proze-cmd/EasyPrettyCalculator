@@ -101,6 +101,16 @@ promise, and a tap must keep it.**
   indefinite unless something gives the container one. It silently becomes 0.
 - **A percentage `width` inside a sized grid cell is a fraction of a fraction.**
   Bond pips came out 5px this way.
+- **Centring a line of text does not centre what you can see.** The em box
+  reserves room for descenders and a digit uses none of it, so a numeral rides
+  off-centre inside its own background — by 14px on a phone, more on a tablet.
+  `centreGlyph()` measures the ink with `measureText().actualBoundingBox*` and
+  nudges it. Two things to know:
+  - **The ink and the background must be different elements.** Shifting an
+    element that carries both moves them together and changes nothing.
+  - **A rect already includes the transform.** Adding the shift again when
+    checking double-counts it, and reports a miscentring that isn't there —
+    which is exactly how this fix first looked like it had failed.
 
 ---
 
@@ -123,6 +133,10 @@ seeing a number. **8 views**, in this order:
 | 6 | emblem | where the number lives in the world |
 | 7 | rods | quantity as length, in its bead-stair colour |
 | 8 | ten-frame | the gap to ten |
+
+- **Numerals sit in the middle of their chip.** Check the paired chip, the block
+  numeral and an equation's answer: the gap above the visible digit and the gap
+  below it must match.
 
 - **Go round again** and the split changes: ten as 5+5, then 6+4, 7+3, 8+2,
   9+1. The numeral's colour changes too. Only the objects stay put, and only if

@@ -957,6 +957,12 @@ body.theme-calm .pairs__verdict--odd {
 .rep--block {
   width: 100%;
 }
+.block-num__glyph,
+.numeral__glyph {
+  /* Blocks, so their height is the line box — which is what the centring
+     measures against. */
+  display: block;
+}
 .block-num {
   font-weight: 800;
   line-height: 0.95;

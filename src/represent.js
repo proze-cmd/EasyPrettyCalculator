@@ -773,11 +773,52 @@ function numeralSpan(n, numeralIndex, color) {
   const style = styles[numeralIndex % styles.length];
   const span = document.createElement('span');
   span.className = 'numeral';
-  span.textContent = String(n);
   // An answer is written in the answer colour; everything else cycles.
   span.style.color = color || style.fg;
   span.style.background = style.bg;
+
+  // The digit gets its own element inside the chip. Centring works by nudging
+  // the digit against its background, so the two cannot be the same element —
+  // moving that would carry the background along and change nothing.
+  const glyph = document.createElement('span');
+  glyph.className = 'numeral__glyph';
+  glyph.textContent = String(n);
+  span.appendChild(glyph);
+
+  // Sizes come from clamp(), so they only exist once it is on the page.
+  requestAnimationFrame(() => centreGlyph(glyph));
   return span;
+}
+
+/**
+ * Sit a numeral in the middle of its own chip.
+ *
+ * Centring a line of text does not centre what you can see. The em box reserves
+ * room for the parts of letters that hang below the baseline, and a digit uses
+ * none of it, so the digit ends up riding high or low inside its background
+ * depending on which font the device actually had. Measuring the ink and
+ * shifting by the difference puts it where the eye expects it, on any font.
+ *
+ * Silently does nothing where the measurement isn't available, which leaves the
+ * numeral exactly where it would have been anyway.
+ */
+function centreGlyph(el) {
+  if (!el.isConnected) return;
+  const cs = getComputedStyle(el);
+  const ctx =
+    centreGlyph.ctx || (centreGlyph.ctx = document.createElement('canvas').getContext('2d'));
+  ctx.font = `${cs.fontStyle} ${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`;
+  const m = ctx.measureText(el.textContent);
+  const line = parseFloat(cs.lineHeight);
+  if (!m || typeof m.fontBoundingBoxAscent !== 'number' || !Number.isFinite(line)) return;
+
+  // Where the baseline sits inside the line box, then where the ink sits
+  // around that baseline.
+  const leading = (line - (m.fontBoundingBoxAscent + m.fontBoundingBoxDescent)) / 2;
+  const baseline = leading + m.fontBoundingBoxAscent;
+  const inkMiddle = baseline + (m.actualBoundingBoxDescent - m.actualBoundingBoxAscent) / 2;
+  const shift = line / 2 - inkMiddle;
+  if (Math.abs(shift) > 0.5) el.style.transform = `translateY(${shift.toFixed(2)}px)`;
 }
 
 // ---------------------------------------------------------------------------
@@ -890,10 +931,17 @@ export function renderBlockNumeral(n, styleIndex) {
 
   const block = document.createElement('div');
   block.className = 'block-num pop-anim';
-  block.textContent = String(n);
   block.style.color = style.fg;
   block.style.background = style.bg;
+
+  // The digit gets its own element: the block is already carrying the pop
+  // animation's transform, and centring needs a transform of its own.
+  const glyph = document.createElement('span');
+  glyph.className = 'block-num__glyph';
+  glyph.textContent = String(n);
+  block.appendChild(glyph);
   wrap.appendChild(block);
+  requestAnimationFrame(() => centreGlyph(glyph));
 
   wrap.setAttribute('role', 'img');
   wrap.setAttribute('aria-label', String(n));

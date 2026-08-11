@@ -18,7 +18,10 @@ session scratchpad, not the repo; they cover structure, not judgement.
    patterns to 6, five-and-some-more to 10, tens beyond. **Never more than five
    in a row.**
 3. **Every view earns its tap.** If a screen teaches nothing the screen before
-   it didn't, delete it. Counting levels: ~4 views. Sums: 3–6, all conditional.
+   it didn't, delete it. *Count to 10* is the exception and carries eight,
+   because it is the level a child stays on longest and every one of the eight
+   shows something the others can't. Other counting levels: ~4. Sums: 3–6, all
+   conditional.
 4. **Nothing draws more than `MAX_DRAWN` (20) separate things.** Past that it's
    ten-frames. Nobody counts 100 tiny puppies.
 5. **A level means what its name says.** "Adding to 10" cannot reach 18.
@@ -107,10 +110,29 @@ Do this on **390×844** first, then repeat the shaded rows on 320×568,
 740×380 (landscape) and 820×1180 (tablet), in **both themes**.
 
 ### Level 1 — Count to 10
-- Press **9** → numeral **9** paired with **5 + 4** in dice patterns (I1).
-- Expect **5 views**: paired → one other split (3+3+3) → **emblem** → rods →
-  ten-frame. *Not* three different splits. This is the only counting level with
-  five; the emblem sits third so two taps reach it, but never ahead of the split.
+This level is the one a child spends longest on, so it carries the most ways of
+seeing a number. **8 views**, in this order:
+
+| # | View | What only it does |
+|---|---|---|
+| 1 | paired | the numeral and the quantity together |
+| 2 | split on plates | the parts have identities: 9 is 5 and 4 |
+| 3 | split by ring | *same* things, grouped by enclosure — the nine didn't change |
+| 4 | block numeral | the shape of the symbol, a new colour each lap |
+| 5 | ruled pad | the shape your hand has to make |
+| 6 | emblem | where the number lives in the world |
+| 7 | rods | quantity as length, in its bead-stair colour |
+| 8 | ten-frame | the gap to ten |
+
+- **Go round again** and the split changes: ten as 5+5, then 6+4, 7+3, 8+2,
+  9+1. The numeral's colour changes too. Only the objects stay put, and only if
+  the child pinned them.
+- **Rings must contain what's in them.** They're rounded rectangles, not
+  circles — a circle drawn round a square dice pattern leaves the corner items
+  hanging outside the ring meant to hold them.
+- **Rods**: one bar → centred with its numeral **above**. Several bars (levels
+  2–4) → left edges flush with a label beside each, because that's what makes a
+  short bar visibly shorter.
 - **Emblem**: press 5 → a hand and a `5`, no words. 1 → a sun. 9 → three
   triangles ("three threes"). Nothing on the skip-counting levels.
 - Touch each puppy: rings green, shrinks, counts aloud, celebrates at 9 (I9).
@@ -191,6 +213,12 @@ Do this on **390×844** first, then repeat the shaded rows on 320×568,
 - `12 ÷ 3 =` → the divisor draws as **three empty plates**, not three things,
   and the answer is three plates of four.
 
+### Materials
+- **16** things to count with, and **Surprise me** — which is the **default**,
+  so an unattended app keeps changing the objects by itself.
+- Pick shells → shells stay through a full lap and a reload. Surprise resumes
+  the rotation.
+
 ### Settings & chrome
 - Level slider 1→7 mid-problem: display clears, keypad rebuilds, no errors.
 - Theme switch **with a number on screen** → repaints immediately.
@@ -224,6 +252,9 @@ how many *words* and how many *shapes* are on screen?
 | Ways to make | 1 | the staircase |
 | Mystery bond | 0 | solid dots, empty rings, and a `?` |
 | Meeting a number | 0 | the sun, the hand, the rainbow |
+| Block numeral | 0 | the shape of the symbol |
+| Ruled pad | 0 | one to copy, two to trace |
+| Split by ring | 0 | the same things, in rounded containers |
 
 **If a screen's word count creeps up, it has stopped explaining and started
 telling.** A pre-reader must be able to get it with the sound off.

@@ -16,11 +16,13 @@ with Capacitor** later.
 - **Adjustable complexity by level** via a slider in **Settings** (⚙️).
 - **Quantities are always shown in structured groups** — never a long line to
   count one-by-one. See [How numbers are drawn](#-how-numbers-are-drawn).
-- **Tap the display to transform it** — a short, deliberate set of ways to see
-  the same amount. Counting levels give four: the numeral paired with its
-  quantity, one other way to split it (9 as 5+4, then as 3+3+3), a bead bar,
-  and a ten-frame. A row of dots shows how many there are and jumps to any of
-  them. Every view has to earn its tap.
+- **Tap the display to transform it.** *Count to 10* — the level a child spends
+  longest on — gives eight ways to see the same number: paired with its quantity,
+  split onto coloured plates, the same split ringed instead, the numeral as a
+  block of colour, the numeral on a ruled pad to trace, where the number lives in
+  the world, a bead bar, and a ten-frame. Later levels give fewer, all
+  conditional. A row of dots shows how many there are and jumps to any of them,
+  and every view has to earn its tap.
 - **Numbers pop in** with bouncy animations, sparkles, and confetti on answers.
 - **Gentle sounds** (Web Audio, no files) and **spoken narration** (Web Speech,
   no files) — it counts aloud "one, two, three…" and reads equations out loud.
@@ -56,8 +58,15 @@ them one at a time, and tens are what ten-frames are for.
 
 Other pedagogy baked in:
 
-- **A second way to see it.** One tap shows the same total split another way
-  (9 as 5+4, then as 3+3+3) — enough to make the point, not a slideshow.
+- **A different split every time round.** The journey is a loop, and coming
+  back to the start shows the number split another way: ten is five and five,
+  then six and four, then seven and three, eight and two, nine and one. The
+  total never changes; only the pair does.
+- **Grouped by colour, then grouped by a ring.** The same split is shown twice
+  — once on tinted plates where each part has an identity of its own, and once
+  as plain identical things with a rounded container drawn round each handful.
+  The second is the one that says the nine didn't change; only the way we chose
+  to look at it did.
 - **Part–whole colouring.** In `5 + 4`, the 5 is pink and the 4 is blue — and
   the answer is that same pink 5 beside that same blue 4.
 - **Number bonds.** The whole-and-two-parts diagram from Singapore Math — and
@@ -78,6 +87,12 @@ Other pedagogy baked in:
   colours in a rainbow. Waldorf introduces a number by its character before its
   quantity, so on *Count to 10* one tap shows where that number lives in the
   world. No words — just the thing and the numeral.
+- **The symbol, twice.** Once as a block of colour big enough to fill the panel
+  — a new colour each time round, so the numeral is the thing that stays the
+  same while everything about how it looks changes. And once on a **ruled pad**,
+  one solid numeral to copy and two hollow ones to trace, the way a handwriting
+  page lays it out. Knowing a number means knowing the shape your hand makes,
+  which is why Montessori hands children sandpaper numerals.
 - **Take-away made visible.** In `9 − 4`, the nine is drawn as 5 kept plus
   4 faded and dashed out.
 - **Equal groups.** `3 × 4` is three groups of four, never a flat pile.

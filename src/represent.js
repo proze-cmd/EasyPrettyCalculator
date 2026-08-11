@@ -64,6 +64,7 @@ export function renderQuantity(n, opts = {}) {
     forceChip = false,
     zeroNote = false,
     numeralColor = null,
+    ringed = false,
   } = opts;
 
   const value = Math.round(n);
@@ -102,6 +103,7 @@ export function renderQuantity(n, opts = {}) {
         uniformColor,
         removedGroups,
         forceChip,
+        ringed,
       });
   }
 }
@@ -111,7 +113,7 @@ export function renderQuantity(n, opts = {}) {
 // ---------------------------------------------------------------------------
 
 function renderGrouped(n, o) {
-  const { mode, groups, size, themeIndex, groupColors, uniformColor, removedGroups, forceChip } = o;
+  const { mode, groups, size, themeIndex, groupColors, uniformColor, removedGroups, forceChip, ringed } = o;
   const wrap = shell('rep--grouped', size);
 
   const list = groups && groups.length ? groups : [n];
@@ -130,7 +132,12 @@ function renderGrouped(n, o) {
       (groupColors && groupColors[gi]) || uniformColor || palette[gi % palette.length];
     const grp = document.createElement('div');
     grp.className = 'grp';
-    if (chip) {
+    if (ringed) {
+      // Same things, no colour coding — the grouping is done by drawing a ring
+      // round each handful. A child can see that the nine did not change when
+      // we decided to see it as five and four; only the way we looked did.
+      grp.classList.add('grp--chip', 'grp--ring');
+    } else if (chip) {
       grp.classList.add('grp--chip');
       grp.style.background = color.soft;
       grp.style.borderColor = color.solid;
@@ -371,6 +378,21 @@ function renderRods(n, size) {
   const list = n <= 10 ? [n] : groupsFor(n, 0);
   let drawn = 0;
 
+  // One bar has nothing to line up against, so it is centred with its numeral
+  // above — the pairing every other view uses. Several bars keep their labels
+  // alongside and their left edges flush, because that is what makes a short
+  // bar visibly shorter than a long one.
+  const solo = list.length === 1;
+  if (solo) {
+    wrap.classList.add('rep--rods-solo');
+    const top = document.createElement('div');
+    top.className = 'rod__total';
+    top.textContent = String(n);
+    const color = BEAD_COLORS[list[0]] || BEAD_COLORS[10];
+    top.style.color = color.stroke || color.solid;
+    wrap.appendChild(top);
+  }
+
   list.forEach((count) => {
     const line = document.createElement('div');
     line.className = 'rodline';
@@ -393,12 +415,15 @@ function renderRods(n, size) {
     drawn += count;
     line.appendChild(bar);
 
-    // Montessori always pairs the material with its numeral.
-    const label = document.createElement('span');
-    label.className = 'rod__label';
-    label.textContent = String(count);
-    label.style.color = color.stroke || color.solid;
-    line.appendChild(label);
+    // Montessori always pairs the material with its numeral. With one bar that
+    // pairing has already happened above, so a second copy would just be noise.
+    if (!solo) {
+      const label = document.createElement('span');
+      label.className = 'rod__label';
+      label.textContent = String(count);
+      label.style.color = color.stroke || color.solid;
+      line.appendChild(label);
+    }
 
     wrap.appendChild(line);
   });
@@ -846,4 +871,72 @@ export function renderEmblem(n, size) {
 /** What this number is, in words — for narration only. */
 export function emblemName(n) {
   return NUMBER_EMBLEMS[n] ? NUMBER_EMBLEMS[n].name : null;
+}
+
+
+// ---------------------------------------------------------------------------
+// The symbol itself
+// ---------------------------------------------------------------------------
+
+/**
+ * The numeral as a solid block of colour, big enough to fill the panel.
+ *
+ * Knowing a number means knowing its shape as well as its size, and the shape
+ * deserves a screen of its own rather than a caption on someone else's. The
+ * colour changes each time round, so the *number* is what stays the same while
+ * everything about how it looks changes — which is the point being made.
+ */
+export function renderBlockNumeral(n, styleIndex) {
+  const wrap = shell('rep--block', 'big');
+  const styles = numeralStyles();
+  const style = styles[Math.abs(styleIndex) % styles.length];
+
+  const block = document.createElement('div');
+  block.className = 'block-num pop-anim';
+  block.textContent = String(n);
+  block.style.color = style.fg;
+  block.style.background = style.bg;
+  wrap.appendChild(block);
+
+  wrap.setAttribute('role', 'img');
+  wrap.setAttribute('aria-label', String(n));
+  return wrap;
+}
+
+/**
+ * The number on a ruled pad, the way it is written.
+ *
+ * A child meets a numeral twice: once as a quantity, and once as a shape their
+ * own hand has to make. Montessori gives them sandpaper numerals to trace for
+ * exactly this reason. Here the first is solid — the one to copy — and the rest
+ * are hollow, the way a handwriting pad lays out its practice.
+ */
+export function renderPad(n) {
+  const wrap = shell('rep--pad', 'big');
+
+  const pad = document.createElement('div');
+  pad.className = 'pad';
+
+  const line = document.createElement('div');
+  line.className = 'pad__line';
+
+  const model = document.createElement('span');
+  model.className = 'pad__digit pad__digit--model pop-in';
+  model.textContent = String(n);
+  line.appendChild(model);
+
+  for (let i = 0; i < 2; i++) {
+    const trace = document.createElement('span');
+    trace.className = 'pad__digit pad__digit--trace pop-in';
+    trace.style.animationDelay = (i + 1) * 180 + 'ms';
+    trace.textContent = String(n);
+    line.appendChild(trace);
+  }
+
+  pad.appendChild(line);
+  wrap.appendChild(pad);
+
+  wrap.setAttribute('role', 'img');
+  wrap.setAttribute('aria-label', `Writing the number ${n}`);
+  return wrap;
 }

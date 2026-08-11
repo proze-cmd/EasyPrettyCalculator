@@ -150,6 +150,7 @@ export const OBJECT_THEMES = [
   { name: 'turtles', emoji: '🐢' },
   { name: 'ladybugs', emoji: '🐞' },
   { name: 'rockets', emoji: '🚀' },
+  { name: 'pebbles', emoji: '🪨' },
 ];
 
 /**

@@ -39,6 +39,10 @@ export const state = {
   // Which view the display is showing (advances on each tap).
   viewIndex: 0,
   numeralStyleIndex: 0,
+  // Which way of splitting the number is on show. Bumped every time the
+  // journey comes back round to the start, so going round again is a different
+  // trip: ten is five and five, then six and four, then seven and three…
+  splitIndex: 0,
 
   hasInteracted: false,
 };

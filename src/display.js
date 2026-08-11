@@ -24,6 +24,8 @@ import {
   resultColor,
   renderEmblem,
   emblemName,
+  renderBlockNumeral,
+  renderPad,
 } from './represent.js';
 import { renderBond } from './bond.js';
 import {
@@ -48,7 +50,7 @@ const COUNTED = '.obj.counted, .tf-filled.counted, .bead.counted';
  * that happen to contain circles. Counting the circles in an explanation
  * teaches nothing and gets in the way of reading it.
  */
-const COUNTABLE_VIEWS = new Set(['paired', 'objects', 'tenframe', 'rods', 'pairs']);
+const COUNTABLE_VIEWS = new Set(['paired', 'objects', 'ringed', 'tenframe', 'rods', 'pairs']);
 
 function viewIsCountable() {
   return COUNTABLE_VIEWS.has(currentView().mode);
@@ -265,13 +267,24 @@ function viewCycle() {
     const n = state.countValue;
     const drawable = n <= MAX_DRAWN;
     const views = [{ mode: 'paired' }];
-    // One alternative split — enough to show a total can be seen more than one
-    // way, without turning it into a slideshow.
-    if (drawable && decompositionCount(n) > 1) views.push({ mode: 'objects', decomp: 1 });
-    // Where the number lives outside of maths — one sun, five fingers. Third,
-    // not last: Waldorf meets a number's character early, and a four-year-old
-    // who taps twice has to be able to reach it. But not before the split,
-    // which is the thing this app is actually for. Level 1 only.
+    // Which way of splitting the number is on offer this time round. The
+    // journey is a loop, so going round again shows ten as six and four where
+    // last time it was five and five — the same total, a different pair.
+    const splits = decompositionCount(n);
+    const decomp = splits > 1 ? 1 + (state.splitIndex % (splits - 1)) : 0;
+    if (drawable && splits > 1) {
+      // The same split twice over: once on coloured plates, where each part has
+      // an identity of its own, and once as plain identical things with a ring
+      // drawn round each handful. The second is the one that says the nine did
+      // not change — only the way we chose to look at it did.
+      views.push({ mode: 'objects', decomp });
+      views.push({ mode: 'ringed', decomp });
+    }
+    // The symbol on its own, in a colour that is different every time round.
+    if (level.emblems) views.push({ mode: 'block' });
+    // And the shape their own hand has to make.
+    if (level.emblems) views.push({ mode: 'pad' });
+    // Where the number lives outside of maths — one sun, five fingers.
     if (level.emblems && NUMBER_EMBLEMS[n]) views.push({ mode: 'emblem' });
     // Pairing up belongs on the level where counting is pairing.
     if (drawable && level.pairs) views.push({ mode: 'pairs' });
@@ -339,9 +352,16 @@ function goToView(index) {
   // chosen their own, in which case it stays as they left it. Re-selecting the
   // dot you're already on is not a wrap and shouldn't change anything.
   const from = state.viewIndex % cycle.length;
-  if (next === 0 && from !== 0 && !state.materialPinned) {
-    state.objectThemeIndex = (state.objectThemeIndex + 1) % OBJECT_THEMES.length;
+  if (next === 0 && from !== 0) {
+    // Coming back to the start earns a different way of splitting the number
+    // and a different colour for its numeral, so a second lap is a second look
+    // rather than a repeat. The objects only change if the child hasn't
+    // chosen their own.
+    state.splitIndex = state.splitIndex + 1;
     state.numeralStyleIndex = state.numeralStyleIndex + 1;
+    if (!state.materialPinned) {
+      state.objectThemeIndex = (state.objectThemeIndex + 1) % OBJECT_THEMES.length;
+    }
     persist();
   }
 
@@ -366,6 +386,19 @@ function narrateView() {
     if (view.mode === 'emblem') {
       const name = emblemName(n);
       say(name ? `${n}. Like ${name}.` : String(n));
+      return;
+    }
+    if (view.mode === 'block') {
+      say(`This is how we write ${n}.`);
+      return;
+    }
+    if (view.mode === 'pad') {
+      say(`Now you draw ${n}.`);
+      return;
+    }
+    if (view.mode === 'ringed') {
+      const groups = groupsFor(n, view.decomp || 0);
+      say(`Still ${n}. Just ${describeGroups(groups)}.`);
       return;
     }
     if (view.mode === 'objects' || view.mode === 'rods') {
@@ -540,6 +573,29 @@ function renderCountMode() {
 
   if (view.mode === 'emblem') {
     displayEl.appendChild(renderEmblem(n, 'big'));
+    return;
+  }
+
+  if (view.mode === 'block') {
+    displayEl.appendChild(renderBlockNumeral(n, state.numeralStyleIndex));
+    return;
+  }
+
+  if (view.mode === 'pad') {
+    displayEl.appendChild(renderPad(n));
+    return;
+  }
+
+  if (view.mode === 'ringed') {
+    displayEl.appendChild(
+      renderQuantity(n, {
+        mode: 'objects',
+        decompIndex: view.decomp || 0,
+        size: 'big',
+        ringed: true,
+        ...styleOpts(),
+      })
+    );
     return;
   }
 

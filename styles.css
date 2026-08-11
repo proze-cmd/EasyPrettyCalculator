@@ -382,6 +382,19 @@ body.has-interacted .tap-hint {
   gap: 10px;
   width: 100%;
 }
+/* One bar has nothing to line up against, so it sits in the middle under its
+   numeral instead of hugging the left edge with the number stranded beside it. */
+.rep--rods-solo {
+  align-items: center;
+}
+.rep--rods-solo .rodline {
+  justify-content: center;
+}
+.rod__total {
+  font-weight: 800;
+  font-size: clamp(46px, min(15vw, 13vh), 110px);
+  line-height: 1;
+}
 /* A rod is the widest thing the app draws — ten beads plus a numeral. Rather
    than letting a long one overrun the panel, the bar shrinks its beads to fit.
    The bar still starts at the left edge, so length stays comparable between
@@ -933,6 +946,116 @@ body.theme-calm .pairs__verdict--odd {
 }
 .bond__cell--mystery .bond__circle {
   border-style: dashed;
+}
+
+/* --- The number as a block ----------------------------------------------
+   Knowing a number means knowing its shape as well as its size. The colour
+   changes each time round, so the numeral is what stays the same while
+   everything about how it looks changes.
+   ------------------------------------------------------------------------ */
+
+.rep--block {
+  width: 100%;
+}
+.block-num {
+  font-weight: 800;
+  line-height: 0.95;
+  font-size: clamp(96px, min(44vw, 34vh), 300px);
+  padding: 0.1em 0.24em;
+  border-radius: 0.18em;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.14);
+  letter-spacing: -0.02em;
+}
+
+/* --- Writing the number -------------------------------------------------
+   A handwriting pad: ruled lines, one solid numeral to copy, and two hollow
+   ones to trace over. Montessori gives children sandpaper numerals for the
+   same reason — the shape has to be made, not only recognised.
+   ------------------------------------------------------------------------ */
+
+.rep--pad {
+  width: 100%;
+}
+.pad {
+  width: 100%;
+  max-width: 460px;
+  border-radius: 14px;
+  background: repeating-linear-gradient(
+    to bottom,
+    #fdfdf7 0,
+    #fdfdf7 calc(var(--rule) - 2px),
+    #cfe0ef calc(var(--rule) - 2px),
+    #cfe0ef var(--rule)
+  );
+  --rule: clamp(26px, 7vh, 46px);
+  border: 2px solid #e6e2d2;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.1);
+  padding: clamp(10px, 3vh, 22px) 14px;
+  position: relative;
+  overflow: hidden;
+}
+/* The red margin every exercise book has. */
+.pad::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: clamp(16px, 6%, 34px);
+  width: 2px;
+  background: #f0a3a3;
+}
+.pad__line {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(10px, 5vw, 34px);
+  padding-left: clamp(14px, 5%, 30px);
+}
+.pad__digit {
+  font-size: clamp(58px, min(20vw, 17vh), 150px);
+  font-weight: 800;
+  line-height: 1;
+}
+.pad__digit--model {
+  color: #3c6ea5;
+}
+/* Hollow, the way a practice page prints the ones you write over. */
+.pad__digit--trace {
+  color: transparent;
+  -webkit-text-stroke: 2.5px #9db8cf;
+  opacity: 0.75;
+}
+body.theme-calm .pad {
+  background: repeating-linear-gradient(
+    to bottom,
+    #fbf7ee 0,
+    #fbf7ee calc(var(--rule) - 2px),
+    #ddd4c2 calc(var(--rule) - 2px),
+    #ddd4c2 var(--rule)
+  );
+  border-color: #e0d6c4;
+}
+body.theme-calm .pad::before { background: #d09a8a; }
+body.theme-calm .pad__digit--model { color: #7a6552; }
+body.theme-calm .pad__digit--trace { -webkit-text-stroke-color: #b7a894; }
+
+/* --- Grouping by enclosure ----------------------------------------------
+   The same things, all alike, with a ring drawn round each handful. Colour
+   coding says "these are different kinds"; a ring says "the nine did not
+   change, only the way we looked at it did".
+   ------------------------------------------------------------------------ */
+
+.grp--ring {
+  background: rgba(74, 58, 85, 0.045);
+  border: 3px dashed rgba(74, 58, 85, 0.42);
+  /* Generously rounded, but not a circle: the things inside sit on a square
+     dice grid, and a circle drawn round a square leaves the corner ones
+     hanging outside the very ring that is supposed to be holding them. */
+  border-radius: 30px;
+}
+body.theme-calm .grp--ring {
+  border-color: rgba(90, 74, 63, 0.45);
+  background: rgba(90, 74, 63, 0.05);
 }
 
 /* --- Meeting the number ------------------------------------------------

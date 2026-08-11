@@ -138,10 +138,22 @@ seeing a number. **8 views**, in this order:
 
 ### The writing pad — check all of this
 - **Guides**: three rules, top and bottom solid, the middle one dashed.
-- **Stroke order**: 3, 4, 5 and 10 have two strokes; the rest have one. Each
-  start has a numbered pink dot. The ink has round caps.
-- It writes itself progressively, pauses on the finished numeral, wipes itself,
-  then shows the draggable knob (`pad--tracing`).
+- **Stroke counts** (from a handwriting worksheet, not a typeface):
+
+  | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 0 | 10 |
+  |---|---|---|---|---|---|---|---|---|---|---|
+  | 1 | **2** | **1** | **2** | **2** | 1 | 1 | 1 | **1** | 1 | 2 |
+
+  The bolded ones have been got wrong before. **4 has an open top** — the
+  diagonal and the stem must not meet. **9 is one movement**: from the top,
+  leftwards round the bowl, then straight down.
+- Each start has a numbered pink dot. The ink has round caps.
+- **Check direction, not just shape.** `getPointAtLength(0)` and at 12% tells
+  you where a stroke starts and which way it sets off; a nine that starts on the
+  right and goes *up* draws correctly and is still wrong.
+- It writes itself with the pen visible, pauses on the finished numeral, then
+  runs **backwards along the same path** to unwrite it — not a fade, which read
+  as a glitch — and then shows the draggable knob (`pad--tracing`).
 - **Drag the knob**: the ink follows the finger and never runs ahead of it. Go
   off the line and it waits. Finish stroke 1 and the knob jumps to stroke 2's
   start. Finish both → green, confetti, "You wrote 3!".
@@ -150,8 +162,11 @@ seeing a number. **8 views**, in this order:
      way out. It may only swallow while actually being traced.
   2. Not swallowing the tap that *completes* the trace flipped the page
      instantly, so the child never saw what they wrote. Hence `pad--hold`.
-- Sanity-check the paths themselves by rendering all ten on one sheet — a 9
-  whose tail sweeps left reads as a `g`.
+- Sanity-check the paths themselves by rendering all eleven on one sheet with a
+  start dot and an end arrow on each. A 9 whose tail sweeps left reads as a `g`;
+  a 9 whose bowl doesn't close reads as a `q`.
+  - When building that sheet: `insertAdjacentHTML` on an SVG node makes **HTML**
+    elements, which never render. Use `createElementNS`.
 - **Rods**: one bar → centred with its numeral **above**. Several bars (levels
   2–4) → left edges flush with a label beside each, because that's what makes a
   short bar visibly shorter.

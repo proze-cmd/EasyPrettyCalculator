@@ -1043,15 +1043,23 @@ function runPad(svg, inks, ghosts, knob, n) {
   const stop = () => { cancelled = true; };
   svg.addEventListener('pad-stop', stop);
 
-  // --- the demonstration ---
   const SPEED = 74; // grid units a second — the pace of a hand, not a machine
+  const BACK = 150; // rubbing out is brisker than writing
   const BETWEEN = 420; // a beat between one stroke and the next
+  const alive = () => !cancelled && svg.isConnected;
+  const later = (ms, fn) => setTimeout(() => { if (alive()) fn(); }, ms);
+
+  // The pen is visible while it writes, so what a child watches is a hand
+  // making the shape rather than a line appearing by itself.
+  svg.classList.add('pad--writing');
+
+  // --- writing it ---
   let stroke = 0;
   let dist = 0;
   let last = null;
 
-  function step(now) {
-    if (cancelled || !svg.isConnected) return;
+  function forward(now) {
+    if (!alive()) return;
     if (last === null) last = now;
     dist += ((now - last) / 1000) * SPEED;
     last = now;
@@ -1061,35 +1069,55 @@ function runPad(svg, inks, ghosts, knob, n) {
       place(stroke, lengths[stroke]);
       stroke += 1;
       dist = 0;
+      last = null;
       if (stroke < inks.length) {
         // Lift the pen, move to where the next stroke starts, and begin again.
         place(stroke, 0);
-        last = null;
-        setTimeout(() => { if (!cancelled && svg.isConnected) requestAnimationFrame(step); }, BETWEEN);
+        later(BETWEEN, () => requestAnimationFrame(forward));
         return;
       }
-      if (stroke >= inks.length) {
-        // Written. Pause on the finished numeral, then clear it and offer the
-        // pen — the child has just been shown the route they are about to take.
-        setTimeout(() => {
-          if (cancelled || !svg.isConnected) return;
-          svg.classList.add('pad--erasing');
-          inks.forEach((p, i) => { p.style.strokeDashoffset = lengths[i]; });
-          setTimeout(() => {
-            if (cancelled || !svg.isConnected) return;
-            svg.classList.remove('pad--erasing');
-            offerTrace(svg, inks, knob, lengths, place, fill, n);
-          }, 700);
-        }, 900);
-        return;
-      }
+      // Written. Rest on the finished numeral before undoing it.
+      later(1100, () => { stroke = inks.length - 1; dist = lengths[stroke]; last = null;
+        requestAnimationFrame(backward); });
+      return;
     }
     fill(stroke, dist);
     place(stroke, dist);
-    requestAnimationFrame(step);
+    requestAnimationFrame(forward);
   }
+
+  // --- and then unwriting it, backwards along the same route ---
+  //
+  // Fading the whole numeral out at once looked like a glitch. Running the pen
+  // back the way it came reads as "now you do it", and shows the route a second
+  // time in reverse before the child is asked to follow it.
+  function backward(now) {
+    if (!alive()) return;
+    if (last === null) last = now;
+    dist -= ((now - last) / 1000) * BACK;
+    last = now;
+
+    if (dist <= 0) {
+      fill(stroke, 0);
+      place(stroke, 0);
+      stroke -= 1;
+      last = null;
+      if (stroke < 0) {
+        later(220, () => offerTrace(svg, inks, knob, lengths, place, fill, n));
+        return;
+      }
+      dist = lengths[stroke];
+      place(stroke, dist);
+      requestAnimationFrame(backward);
+      return;
+    }
+    fill(stroke, dist);
+    place(stroke, dist);
+    requestAnimationFrame(backward);
+  }
+
   place(0, 0);
-  requestAnimationFrame(step);
+  requestAnimationFrame(forward);
 }
 
 /** The child's turn: drag the knob along and the ink follows the finger. */
@@ -1097,6 +1125,7 @@ function offerTrace(svg, inks, knob, lengths, place, fill, n) {
   let stroke = 0;
   let dist = 0;
   let dragging = false;
+  svg.classList.remove('pad--writing');
   svg.classList.add('pad--tracing');
   place(0, 0);
 

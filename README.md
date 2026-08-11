@@ -93,15 +93,32 @@ Other pedagogy baked in:
   — a new colour each time round, so the numeral is the thing that stays the
   same while everything about how it looks changes.
 - **And then you write it.** On a real handwriting guide — solid line top and
-  bottom, dashed line down the middle — the numeral draws itself *in stroke
-  order*, with a numbered dot showing where each stroke begins. A three makes
-  its top belly, pauses, then its bottom one. Then it wipes itself off and hands
-  over the pen: **drag the dot round the shape and the ink follows your finger**,
-  stroke by stroke, and it turns green when you finish. Wander off the line and
-  it simply waits for you to come back. Every numeral 0–10 has its own written
-  stroke path — a font knows what a three *looks* like but not how it's *made*,
-  and the making is the part a hand has to learn. It's why Montessori gives
-  children sandpaper numerals to trace.
+  bottom, dashed line down the middle — the numeral draws itself the way a hand
+  makes it, with the pen visible and a numbered dot where each stroke begins.
+  Then the pen runs **back the way it came**, unwriting the numeral, and hands
+  over: **drag the dot round the shape and the ink follows your finger**, stroke
+  by stroke, turning green when you finish. Wander off the line and it waits for
+  you to come back.
+
+  Every numeral has its own written stroke path, following a handwriting
+  worksheet rather than a typeface — a font knows what a three *looks* like but
+  not how it's *made*:
+
+  | | strokes | how it goes |
+  |---|---|---|
+  | 1 | one | straight down |
+  | 2 | two | the curve, then the line along the bottom |
+  | 3 | one | both bellies without lifting |
+  | 4 | two | down-and-across, then the stem — with an **open top** |
+  | 5 | two | down and round the belly, then the bar across the top |
+  | 6 | one | from the top, left and down, round the loop |
+  | 7 | one | across, then down |
+  | 8 | one | from the top, left, round both loops |
+  | 9 | one | from the top, left round the bowl, then straight down |
+  | 0 | one | from the top, left, all the way round |
+
+  It's why Montessori gives children sandpaper numerals to trace: the making is
+  the part a hand has to learn.
 - **Take-away made visible.** In `9 − 4`, the nine is drawn as 5 kept plus
   4 faded and dashed out.
 - **Equal groups.** `3 × 4` is three groups of four, never a flat pile.

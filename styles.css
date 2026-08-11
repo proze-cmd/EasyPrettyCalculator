@@ -1021,6 +1021,7 @@ body.theme-calm .pairs__verdict--odd {
 }
 /* While it is being written or traced the ink must follow exactly, with no
    easing lagging behind the finger. */
+.pad--writing .pad__ink,
 .pad--tracing .pad__ink { transition: none; }
 .pad__start {
   fill: #ff8fab;
@@ -1042,6 +1043,9 @@ body.theme-calm .pairs__verdict--odd {
   opacity: 0;
   filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.25));
   cursor: grab;
+}
+.pad--writing .pad__knob {
+  opacity: 1;
 }
 .pad--tracing .pad__knob {
   opacity: 1;

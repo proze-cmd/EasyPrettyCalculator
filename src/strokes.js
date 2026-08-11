@@ -59,8 +59,12 @@ export const DIGIT_STROKES = {
   ],
   // From the top, leftwards round the bowl, and then straight down. One
   // movement: the bowl runs into the stem without the pen lifting.
+  // The bowl closes on its own right-hand side rather than back at the top, so
+  // the pen is already where the stem belongs and can run straight down. Closing
+  // at the top instead leaves a diagonal across the counter, which is what made
+  // the stem look like it was leaning.
   9: [
-    'M62 21 C44 21 26 32 22 50 C18 68 30 82 48 82 C66 82 80 70 81 52 C82 38 74 26 62 21 L81 66 L81 134',
+    'M56 20 C37 22 21 34 21 52 C21 69 34 81 52 81 C69 81 82 69 82 52 C82 40 79 30 74 24 L82 54 L82 134',
   ],
   // Ten is two numerals side by side, so it is written as one then zero. The
   // grid is wider for it; `padWidth` says so.

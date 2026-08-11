@@ -59,12 +59,17 @@ export const DIGIT_STROKES = {
   ],
   // From the top, leftwards round the bowl, and then straight down. One
   // movement: the bowl runs into the stem without the pen lifting.
-  // The bowl closes on its own right-hand side rather than back at the top, so
-  // the pen is already where the stem belongs and can run straight down. Closing
-  // at the top instead leaves a diagonal across the counter, which is what made
-  // the stem look like it was leaning.
+  // Start halfway between the headline and the midline — which is the circle's
+  // own right-hand edge — circle all the way back to the left, and then pull
+  // straight down to the baseline.
+  //
+  // Closing the circle exactly where it started means the pen finishes on the
+  // line the stem runs along, so the stem is a true tangent: dead straight from
+  // the circle down to the baseline, joined to the bowl rather than reaching
+  // across to it. Any other closing point leaves a diagonal through the counter,
+  // and that diagonal is what makes a nine look like it is leaning.
   9: [
-    'M56 20 C37 22 21 34 21 52 C21 69 34 81 52 81 C69 81 82 69 82 52 C82 40 79 30 74 24 L82 54 L82 134',
+    'M80 45 C80 28 67 15 50 15 C33 15 20 28 20 45 C20 62 33 75 50 75 C67 75 80 62 80 45 L80 135',
   ],
   // Ten is two numerals side by side, so it is written as one then zero. The
   // grid is wider for it; `padWidth` says so.

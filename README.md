@@ -114,7 +114,7 @@ Other pedagogy baked in:
   | 6 | one | from the top, left and down, round the loop |
   | 7 | one | across, then down |
   | 8 | one | from the top, left, round both loops |
-  | 9 | one | from the top, left round the bowl, then straight down |
+  | 9 | one | halfway down the bowl, circle back left, then straight down |
   | 0 | one | from the top, left, all the way round |
 
   It's why Montessori gives children sandpaper numerals to trace: the making is

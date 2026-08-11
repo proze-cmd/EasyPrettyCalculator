@@ -145,8 +145,14 @@ seeing a number. **8 views**, in this order:
   | 1 | **2** | **1** | **2** | **2** | 1 | 1 | 1 | **1** | 1 | 2 |
 
   The bolded ones have been got wrong before. **4 has an open top** — the
-  diagonal and the stem must not meet. **9 is one movement**: from the top,
-  leftwards round the bowl, then straight down.
+  diagonal and the stem must not meet. **9 is one movement**: start halfway
+  between the headline and the midline, circle all the way back to the left,
+  then pull straight down to the baseline.
+- **The nine's stem must be dead straight and joined to the bowl.** The circle
+  has to close at its *own rightmost point*, because that is the line the stem
+  runs down. Close it anywhere else and the pen has to reach across to reach the
+  stem — that reach gets drawn as a diagonal through the counter, and it is what
+  makes the stem look like it is leaning. It has been wrong this way twice.
 - Each start has a numbered pink dot. The ink has round caps.
 - **Check direction, not just shape.** `getPointAtLength(0)` and at 12% tells
   you where a stroke starts and which way it sets off; a nine that starts on the

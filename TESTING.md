@@ -300,6 +300,34 @@ a sum here and expects an answer without typing one is testing the old app.
   - Guess the part `=` → "Yes!", confetti, the sum completes.
   - Only three views while a question is open (question, objects, bond).
     Make-a-ten and the rest assume a finished sum and several would answer it.
+- **The number line.** `5 + 4 = 9` → a road 0–10, pink from 0 to 5, four blue
+  hops **over** the road labelled `+4`, a green 9 where they land.
+  - The hops must arc **above** the line. Below it means the arc sweep flag is
+    backwards, which is what the first version did.
+  - `8 + 5 = 13` → the road stops at **15**, not 20, and only 0, 5, 8, 10, 13
+    and 15 are named. The road is drawn the same width whatever its span — if a
+    longer sum makes the whole picture shrink, the step is being scaled instead
+    of the gap.
+  - `9 − 4` → four hops **backwards**, still over the road, labelled `−4`.
+  - Mid-mystery → the hops are hollow and dashed with a `?` over them, and there
+    are exactly as many as the answer. That is the answer, countable, which is
+    the point.
+  - Offered while an answer is being worked out, too. Counting on is how a child
+    of this age finds 5 + 4; withholding the tool and then asking for the answer
+    would be a trick.
+- **The addition strip board.** On the *second* lap — it and the bond say the
+  same thing in two media, so they take turns, the way the counting levels
+  alternate their two ways of splitting. Six views a lap, not seven.
+  `5 + 4` → a light-blue 5 and a yellow 4 nose to tail, a dark-blue 9 underneath. **The two rows must end at the same pixel** —
+  that is the entire lesson. Anything that adds width to one row and not the
+  other (a gap, a border, a label beside the strip instead of above it) breaks
+  it silently. Check `endGap`, don't eyeball it.
+  - `8 + 5` → the whole row is a **gold ten-bar and a three**, not thirteen of
+    one colour.
+  - `9 − 4` → the 9 on top; underneath, the 5 that stays beside the 4 that went,
+    drawn as empty rings of the same size, ends still aligned.
+  - Bead size comes from `cqw`, not a percentage. A percentage resolves against
+    the strip, which is sized by its beads — the beads collapse to nothing.
 - `10` `+` `?` on a level that stops at ten is refused with a reason — there is
   no missing part to find.
 - No `?` key on **Fair Shares** (levels 9 and 10 have × and ÷).

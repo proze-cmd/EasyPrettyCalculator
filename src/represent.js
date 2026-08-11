@@ -1471,3 +1471,230 @@ export function renderTrack(keys, n) {
   wrap.setAttribute('aria-label', `${n} in the count: ${keys.filter((k) => k <= n).join(', ')}`);
   return wrap;
 }
+
+// ---------------------------------------------------------------------------
+// The number line — where a number *is*, and what adding does to it
+// ---------------------------------------------------------------------------
+
+// The road is always drawn the same width, and the space between one number
+// and the next is what changes. Letting the road grow with the span instead
+// would halve everything on screen the moment a sum reached past ten.
+const LINE_ROAD = 400;
+const LINE_PAD = 34;
+const LINE_Y = 112; // where the axis sits in the grid
+const LINE_H = 160;
+
+/**
+ * A count laid out as a road, and the sum walked along it.
+ *
+ * Everything else in the app answers "how many". This answers "where", and it
+ * is the only view that shows adding as something that *happens* rather than
+ * as two piles pushed together: you are standing on five, you take four steps,
+ * you end up on nine. That is counting on — the strategy this age is actually
+ * being taught — and it is what a number line is for in every one of the four
+ * approaches: Montessori walks it, Singapore draws it, Waldorf counts it aloud
+ * in rhythm, and it is the same road the ruler and the thermometer are.
+ *
+ * The same picture asks the missing-addend question, which is why the hops can
+ * be drawn hollow: you are on five, you need to reach nine, how many steps?
+ * Nobody is told — the steps are there to be counted.
+ *
+ * @param {number} from    where the walk starts
+ * @param {number} to      where it ends
+ * @param {number} span    the last number on the road (10 or 20)
+ * @param {boolean} hollow the hops are the question, so they are drawn empty
+ */
+export function renderNumberLine(from, to, span, hollow = false) {
+  const NS = 'http://www.w3.org/2000/svg';
+  const wrap = shell('rep--line', 'big');
+  const palette = partColors();
+  const colorFrom = palette[0].solid;
+  const colorHop = palette[1].solid;
+  const colorTo = resultColor();
+
+  const W = LINE_PAD * 2 + LINE_ROAD;
+  const gap = LINE_ROAD / span;
+  const x = (n) => LINE_PAD + n * gap;
+  const svg = document.createElementNS(NS, 'svg');
+  svg.setAttribute('viewBox', `0 0 ${W} ${LINE_H}`);
+  svg.setAttribute('class', 'line__road');
+
+  const add = (name, attrs, cls) => {
+    const el = document.createElementNS(NS, name);
+    Object.entries(attrs).forEach(([k, v]) => el.setAttribute(k, v));
+    if (cls) el.setAttribute('class', cls);
+    svg.appendChild(el);
+    return el;
+  };
+
+  // The road, and how far along it you already are.
+  add('line', { x1: LINE_PAD - 14, y1: LINE_Y, x2: W - LINE_PAD + 14, y2: LINE_Y }, 'line__axis');
+  if (from > 0) {
+    add(
+      'line',
+      { x1: x(0), y1: LINE_Y, x2: x(from), y2: LINE_Y, stroke: colorFrom },
+      'line__walked'
+    );
+  }
+
+  // Every whole number is a place you can stand. Past ten there are too many
+  // to name without them colliding, so only the fives and the two that matter
+  // are written — which is how a classroom number line is marked anyway.
+  const named = (n) => span <= 10 || n % 5 === 0 || n === from || n === to;
+  for (let n = 0; n <= span; n += 1) {
+    add('line', { x1: x(n), y1: LINE_Y - 8, x2: x(n), y2: LINE_Y + 8 }, 'line__tick');
+    if (!named(n)) continue;
+    const label = add('text', { x: x(n), y: LINE_Y + 34 }, 'line__num');
+    if (n === from) label.setAttribute('fill', colorFrom);
+    if (n === to && !hollow) label.setAttribute('fill', colorTo);
+    label.textContent = String(n);
+  }
+
+  // The steps. One arc per whole number travelled, laid down one after another
+  // so the walk reads as a walk.
+  const step = to >= from ? 1 : -1;
+  const hops = Math.abs(to - from);
+  const rx = gap / 2;
+  // Taller than it is wide, so a hop looks like a hop — but not so tall on a
+  // crowded road that it turns into a spike.
+  const ry = Math.min(30, gap * 0.85);
+  for (let i = 0; i < hops; i += 1) {
+    const x0 = x(from + i * step);
+    const x1 = x(from + (i + 1) * step);
+    // In SVG's upside-down world sweep 1 curves clockwise on screen, which
+    // going left to right means *over the top*. Getting this backwards buries
+    // the hops under the road, which is what the first version did.
+    const sweep = step > 0 ? 1 : 0;
+    const hop = add(
+      'path',
+      {
+        d: `M ${x0} ${LINE_Y} A ${rx} ${ry} 0 0 ${sweep} ${x1} ${LINE_Y}`,
+        stroke: hollow ? '' : colorHop,
+      },
+      'line__hop' + (hollow ? ' line__hop--hollow' : '')
+    );
+    hop.style.animationDelay = 260 + i * 210 + 'ms';
+  }
+
+  // How many steps that was, written over them — the arithmetic the child just
+  // typed, sitting on top of the thing it describes. When the steps are the
+  // question, this is where the question mark goes.
+  const count = add(
+    'text',
+    { x: (x(from) + x(to)) / 2, y: LINE_Y - ry - 18 },
+    'line__hops' + (hollow ? ' line__hops--hollow' : '')
+  );
+  count.textContent = hollow ? '?' : `${step > 0 ? '+' : '−'}${hops}`;
+  if (!hollow) count.setAttribute('fill', colorHop);
+  count.style.animationDelay = 260 + hops * 210 + 'ms';
+
+  // Where you start, and where you end up.
+  add('circle', { cx: x(from), cy: LINE_Y, r: 11, fill: colorFrom }, 'line__here');
+  const end = add(
+    'circle',
+    { cx: x(to), cy: LINE_Y, r: 13, fill: hollow ? 'none' : colorTo, stroke: hollow ? colorHop : colorTo },
+    'line__land' + (hollow ? ' line__land--hollow' : '')
+  );
+  end.style.animationDelay = 260 + hops * 210 + 'ms';
+
+  wrap.appendChild(svg);
+  wrap.setAttribute('role', 'img');
+  wrap.setAttribute(
+    'aria-label',
+    hollow
+      ? `A number line. Standing on ${from}, and ${to} is marked. Count the steps between them.`
+      : `A number line. Standing on ${from}, ${hops} step${hops === 1 ? '' : 's'} to ${to}.`
+  );
+  return wrap;
+}
+
+// ---------------------------------------------------------------------------
+// The addition strip board — the sum as one length
+// ---------------------------------------------------------------------------
+
+/** Ten-bars and what is left over, the way the golden beads handle big numbers. */
+function tensAndOnes(n) {
+  if (n <= 10) return [n];
+  const out = [];
+  for (let left = n; left > 0; left -= 10) out.push(Math.min(10, left));
+  return out;
+}
+
+/**
+ * The two parts laid end to end, and the whole underneath them.
+ *
+ * Montessori's addition strip board: a five-strip and a four-strip, laid nose
+ * to tail, reach exactly as far as a nine-strip. The colours are the bead
+ * stair's — a five is always light blue, a nine always dark blue — so the same
+ * language the child learned on the counting levels turns up again here, saying
+ * something new about it. This is the one view where the sum is a *length*
+ * rather than a pile, and where being right is something you can see rather
+ * than something you are told: if the ends line up, it is right.
+ */
+export function renderBeadSum(a, op, b, result) {
+  const wrap = shell('rep--beadsum', 'big');
+  // The longest row decides how big a bead can be, or the rows stop lining up
+  // — which would destroy the only thing this picture exists to show.
+  const widest = Math.max(a, op === '−' ? a : a + b, result);
+  wrap.style.setProperty('--beads', String(widest));
+
+  // The numeral goes *above* its strip, not beside it. Beside it, the labels
+  // would eat different amounts of width in the two rows and the ends would
+  // stop lining up — which is the one thing this picture is for.
+  const strip = (count, color, cls) => {
+    const bar = document.createElement('div');
+    bar.className = 'beadbar ' + (cls || '');
+
+    const label = document.createElement('span');
+    label.className = 'beadbar__label';
+    label.textContent = String(count);
+    if (color) label.style.color = color.stroke || color.solid;
+    bar.appendChild(label);
+
+    const beads = document.createElement('div');
+    beads.className = 'beadbar__beads';
+    for (let i = 0; i < count; i += 1) {
+      const bead = document.createElement('span');
+      bead.className = 'bead pop-in';
+      if (color) {
+        bead.style.background = color.solid;
+        if (color.stroke) bead.style.boxShadow = `inset 0 0 0 2px ${color.stroke}`;
+      }
+      bead.style.animationDelay = Math.min(i * 34, 700) + 'ms';
+      beads.appendChild(bead);
+    }
+    bar.appendChild(beads);
+    return bar;
+  };
+
+  const rowOf = (pieces, name) => {
+    const row = document.createElement('div');
+    row.className = 'beadrow';
+    pieces.forEach((piece) => row.appendChild(piece));
+    row.setAttribute('data-row', name);
+    return row;
+  };
+
+  const bead = (n) => BEAD_COLORS[n] || BEAD_COLORS[10];
+
+  if (op === '−') {
+    // Taking away is the same board read the other way: the whole on top, and
+    // underneath it what is left beside what went.
+    wrap.appendChild(rowOf([strip(a, bead(a))], 'whole'));
+    const kept = strip(result, bead(result));
+    const gone = strip(b, null, 'beadbar--gone');
+    wrap.appendChild(rowOf([kept, gone], 'parts'));
+  } else {
+    wrap.appendChild(rowOf([strip(a, bead(a)), strip(b, bead(b))], 'parts'));
+    wrap.appendChild(rowOf(tensAndOnes(result).map((n) => strip(n, bead(n))), 'whole'));
+  }
+
+  wrap.setAttribute('role', 'img');
+  wrap.setAttribute(
+    'aria-label',
+    op === '−'
+      ? `A ${a} bar, and under it a ${result} bar beside the ${b} that was taken away. They are the same length.`
+      : `A ${a} bar and a ${b} bar end to end, and under them a ${result} bar. They are the same length.`
+  );
+  return wrap;
+}

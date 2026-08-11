@@ -71,6 +71,30 @@ Other pedagogy baked in:
   four didn't change; only the way we chose to look at it did.
 - **Part–whole colouring.** In `5 + 4`, the 5 is pink and the 4 is blue — and
   the answer is that same pink 5 beside that same blue 4.
+- **The number line — a count as a road.** Every other view answers *how many*;
+  this one answers *where*, and it's the only one that shows adding as something
+  that **happens**. You're standing on five, you take four steps, you land on
+  nine — that's counting on, which is the strategy this age is actually being
+  taught, and the hops arrive one at a time while the narration counts them
+  aloud. All four approaches use it: Montessori walks it, Singapore draws it,
+  Waldorf counts it in rhythm, and it's the same road as the ruler and the
+  number track. The same picture asks the missing-addend question: standing on
+  five, nine ringed ahead, and the steps between drawn **hollow** with a `?`
+  over them. Nobody is told — the steps are there to be counted. The road always
+  runs from nought to the next five past the answer, and is drawn the same width
+  whatever its span, so `8 + 5` on a road to fifteen is as legible as `5 + 4` on
+  a road to ten.
+- **The addition strip board**, on every second lap — it and the number bond say
+  the same thing in two media, so they take turns. Montessori's board, in the
+  bead stair's colours:
+  a light-blue five and a yellow four laid nose to tail reach **exactly** as far
+  as a dark-blue nine. The one view where the sum is a *length* rather than a
+  pile, and where being right is something you can see rather than something you
+  are told — if the ends line up, it's right. Past ten the whole becomes a gold
+  ten-bar and the rest, which is how the golden beads do it, and which shows
+  make-a-ten a second way. Taking away is the same board read the other way: the
+  nine on top, and under it the five that's left beside the four that went,
+  drawn as empty rings of exactly the same size.
 - **Number bonds.** The whole-and-two-parts diagram from Singapore Math — and
   the circles hold the actual things, not just numerals. The nine on top is
   drawn as the same pink five and the same blue four sitting in the circles

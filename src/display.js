@@ -28,6 +28,8 @@ import {
   renderPad,
   renderCircled,
   renderTrack,
+  renderNumberLine,
+  renderBeadSum,
 } from './represent.js';
 import { renderBond } from './bond.js';
 import {
@@ -248,6 +250,51 @@ function compareNumbers() {
 }
 
 /**
+ * The walk: where it starts, where it ends, and how long the road is.
+ *
+ * Only for adding and taking away — the line is about moving along a count, and
+ * "shared between three" is not a move. And only while the road can be drawn
+ * with every place on it big enough to see: past twenty the ticks close up into
+ * a comb and stop being places you could stand.
+ *
+ * Returns hops the child has to count themselves when the missing part is what
+ * is being asked for.
+ */
+function lineNumbers() {
+  const { c, a, b, result } = calcParts();
+  if (c.op !== '+' && c.op !== '−') return null;
+  if (a === null) return null;
+  const hunting = c.phase === 'guess';
+  if (hunting && result === null) return null;
+  if (!hunting && b === null) return null;
+  const to = hunting ? result : c.op === '+' ? a + b : a - b;
+  if (to < 0) return null;
+  const biggest = Math.max(a, to);
+  if (biggest > 20) return null;
+  if (to === a) return null; // a walk of no steps is not a walk
+  // The road runs from nought to the next five past where the walk ends. Always
+  // to twenty would leave 5 + 4 stranded in the first half of an empty road.
+  const span = Math.max(10, Math.ceil(biggest / 5) * 5);
+  return { from: a, to, span, hollow: hunting };
+}
+
+/**
+ * The strip board: the two parts laid end to end against the whole.
+ *
+ * Needs a settled answer — the point of it is that the ends line up, which is
+ * nothing to look at while one end is still a question. And it needs beads big
+ * enough to count: past twenty in a row they are a stripe, not a quantity.
+ */
+function beadSumNumbers() {
+  const { c, a, b, result } = calcParts();
+  if (c.op !== '+' && c.op !== '−') return null;
+  if (result === null || a === null || b === null) return null;
+  if (a <= 0 || b <= 0 || result <= 0) return null;
+  const longest = Math.max(a, c.op === '−' ? a : a + b, result);
+  return longest <= 20 ? { a, op: c.op, b, result } : null;
+}
+
+/**
  * All the pairs that make the answer — worth showing once it's small enough.
  * Only alongside addition: the pairs are an addition idea, and offering them
  * after "12 shared between 3 is 4" changes the subject to something the child
@@ -321,6 +368,11 @@ function viewCycle() {
   if (c.phase === 'answer' || c.phase === 'guess') {
     const working = [{ mode: 'numeral' }];
     if (biggest <= MAX_DRAWN) working.push({ mode: 'objects' });
+    // The road is a working tool, not a reward: counting on along it is how a
+    // child of this age actually finds 5 + 4, and counting the steps from five
+    // to nine is how they find the missing part. It gives nothing away that
+    // counting the puppies would not.
+    if (lineNumbers()) working.push({ mode: 'line' });
     if (bondNumbers()) working.push({ mode: 'bond' });
     if (biggest > MAX_DRAWN) working.push({ mode: 'tenframe' });
     return working;
@@ -328,10 +380,20 @@ function viewCycle() {
 
   const views = [{ mode: 'numeral' }];
   if (biggest <= MAX_DRAWN) views.push({ mode: 'objects' });
+  if (lineNumbers()) views.push({ mode: 'line' });
   if (makeTenNumbers()) views.push({ mode: 'maketen' });
   if (regroupNumbers()) views.push({ mode: 'regroup' });
   if (compareNumbers()) views.push({ mode: 'compare' });
-  if (bondNumbers()) views.push({ mode: 'bond' });
+  // The bond and the strip board say the same thing — the whole is these two
+  // parts — one of them in circles and one in length. Both on the same lap is
+  // the same lesson twice; one per lap makes going round again worth doing,
+  // which is exactly how the counting levels handle their two ways of
+  // splitting a number.
+  const board = beadSumNumbers();
+  const bond = bondNumbers();
+  if (board && bond) views.push({ mode: state.splitIndex % 2 ? 'beadsum' : 'bond' });
+  else if (board) views.push({ mode: 'beadsum' });
+  else if (bond) views.push({ mode: 'bond' });
   // The whole family of pairs belongs where a child is actually making sums,
   // not in front of a four-year-old who is still learning what five looks like.
   if (waysNumber()) views.push({ mode: 'ways' });
@@ -438,6 +500,32 @@ function narrateView() {
     return;
   }
 
+  if (view.mode === 'line') {
+    const walk = lineNumbers();
+    if (!walk) return;
+    // Counting on out loud is the view. The rhythm of "five… six, seven, eight,
+    // nine" is the strategy itself, not a description of a picture.
+    if (walk.hollow) {
+      say(`You are on ${walk.from}. How many steps to ${walk.to}?`);
+      return;
+    }
+    const steps = [];
+    const dir = walk.to > walk.from ? 1 : -1;
+    for (let n = walk.from + dir; n !== walk.to + dir; n += dir) steps.push(String(n));
+    saySequence([String(walk.from), ...steps.slice(0, -1), `${walk.to}!`]);
+    return;
+  }
+  if (view.mode === 'beadsum') {
+    const bars = beadSumNumbers();
+    if (bars) {
+      say(
+        bars.op === '−'
+          ? `Take the ${bars.b} away from the ${bars.a}, and the ${bars.result} is what is left.`
+          : `The ${bars.a} and the ${bars.b} together reach exactly as far as the ${bars.result}.`
+      );
+    }
+    return;
+  }
   if (view.mode === 'ways') {
     const w = waysNumber();
     if (w) say(`Here are all the ways to make ${w}`);
@@ -711,6 +799,22 @@ function renderCalcMode() {
     const cmp = compareNumbers();
     if (cmp) {
       displayEl.appendChild(renderCompare(cmp.bigger, cmp.smaller, cmp.diff));
+      return;
+    }
+  }
+
+  if (view.mode === 'line') {
+    const walk = lineNumbers();
+    if (walk) {
+      displayEl.appendChild(renderNumberLine(walk.from, walk.to, walk.span, walk.hollow));
+      return;
+    }
+  }
+
+  if (view.mode === 'beadsum') {
+    const bars = beadSumNumbers();
+    if (bars) {
+      displayEl.appendChild(renderBeadSum(bars.a, bars.op, bars.b, bars.result));
       return;
     }
   }

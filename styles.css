@@ -1440,6 +1440,14 @@ body.theme-calm .bond__link {
   border-radius: 3px;
   height: clamp(34px, 9vw, 58px);
   opacity: 0.45;
+  /* A place waiting to be filled in, so it blinks the way a cursor does. */
+  animation: awaitingPulse 1.5s ease-in-out infinite;
+}
+@keyframes awaitingPulse {
+  50% { opacity: 0.16; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .equation__awaiting { animation: none; }
 }
 .equation__line {
   grid-column: 1 / -1;
@@ -1495,7 +1503,17 @@ body.theme-calm .bond__link {
   align-items: center;
   justify-content: center;
   line-height: 1;
-  padding: 4px;
+  /* A key is not its box. The shadow is the side of it, so what a child sees is
+     `--btn-lip` taller than the element and its middle is half that lower —
+     centring on the box alone leaves every label riding high. */
+  --btn-lip: 6px;
+  /* Shifting the content down by half the lip needs the *difference* between
+     top and bottom padding to be the whole lip. */
+  padding: calc(4px + var(--btn-lip)) 4px 4px;
+}
+.btn__label {
+  display: block;
+  line-height: 1;
 }
 .btn:active {
   transform: translateY(4px);

@@ -263,21 +263,46 @@ Anything checked under "The writing pad" applies here too — with more digits.
   "Tap to see it another way", not "Touch each one".
 
 ### Level 5 — Adding to 10
-- **The mystery.** `5` `+` `?` → the second row becomes a dashed `?` box and the
-  answer row becomes an empty slot (**not** a second `?` — only one thing is
-  unknown). Type `9` `=` → reads `5 + ? = 9`.
-  - Guess `3` `=` → wobble, and it says **"5 plus 3 makes 8. We want 9."** It
-    must never just say "wrong", and 8 must not become the answer.
+
+This is the level that **asks** (`askAnswer` in `config.js`). Everything that
+depends on a finished sum — the bond, make-a-ten, "ways to make", the green
+answer — only arrives once the child has answered correctly. A test that builds
+a sum here and expects an answer without typing one is testing the old app.
+
+- **The child answers.** `5` `+` `5` `=` → the answer row is a **waiting slot**
+  that blinks, not the number 10. The hint reads "Type your answer".
+  - Type `8` `=` → wobble, "**8 is not enough**", the slot empties. 8 must not
+    become the answer, and the app must never say the answer.
+  - Type `12` on this level → refused, it is outside the level (I4).
+  - Two wrong answers in a row → "Tap the picture and count them all."
+  - Type `10` `=` → "Yes! 5 plus 5 equals 10", confetti, and the answer turns
+    green. Until then it is in the ordinary numeral colour: an answer is not an
+    answer until it has been checked.
+  - `⌫` on an empty slot backs out to editing the sum. Pressing `+` mid-answer
+    is refused ("Finish this one first") — changing the sum under an open
+    question leaves the child answering something that is no longer being asked.
+  - The screen-reader label must be the *question* ("5 plus 5 equals what?"),
+    never the finished sum.
+- **The mystery.** `5` `+` `?` → **the app supplies the total**: the screen reads
+  `5 + ? = 10` straight away, with the missing part as a dashed `?` box and
+  nothing else blank. One unknown, never two.
+  - It used to ask for the total as well — "5 and what makes how many?" — which
+    is two unknowns in one breath. If narration ever says "how many" again, or a
+    second empty slot appears, it has regressed.
+  - The total is picked fresh each press, is always reachable, and always leaves
+    at least one to find. Ten and the tens come up more often than the rest.
+  - Guess `3` `=` → wobble, "**5 plus 3 makes 8. We want 10.**" It must never
+    just say "wrong", and 8 must not become the answer.
   - Two wrong guesses in a row → it points at the picture instead of repeating.
-  - Tap through → the bond shows **5 solid dots and 4 empty rings** inside the
-    nine, and a dashed circle holding `?`. The answer is countable on screen.
+  - Tap through → the bond shows the total as **5 solid dots and the rest empty
+    rings**, and a dashed circle holding `?`. The answer is countable on screen.
     That is deliberate: the material is what tells them, not us.
-  - Guess `4` `=` → "Yes!", confetti, the sum completes.
-  - Only three views mid-mystery (question, objects, bond). Make-a-ten and the
-    rest assume a finished sum and several would simply answer it.
-- `5 + ? = 3` must be refused — the total can't be smaller than what we have.
+  - Guess the part `=` → "Yes!", confetti, the sum completes.
+  - Only three views while a question is open (question, objects, bond).
+    Make-a-ten and the rest assume a finished sum and several would answer it.
+- `10` `+` `?` on a level that stops at ten is refused with a reason — there is
+  no missing part to find.
 - No `?` key on **Fair Shares** (levels 9 and 10 have × and ÷).
-- `5 + 4 =` → stacked equation, `=` under the line, answer green.
 - Objects view: pink 5 above blue 4; the answer is that **same** pink 5 beside
   that **same** blue 4 (principle 6).
 - Bond: 5 as a dice five, 4 as a dice four, and the 9 on top drawn as **that
@@ -327,6 +352,17 @@ Anything checked under "The writing pad" applies here too — with more digits.
   so an unattended app keeps changing the objects by itself.
 - Pick shells → shells stay through a full lap and a reload. Surprise resumes
   the rotation.
+
+### The keypad
+- **Every label sits in the middle of the key it is on.** Not the middle of its
+  box: `box-shadow: 0 6px 0` is the *side* of a 3D key, so what a child sees is
+  6px taller than the element and its middle is 3px lower. Both halves matter —
+  the lip (CSS, `--btn-lip`) and the ink inside the line box (`centreGlyph`, for
+  glyphs like `?` whose bowl is heavy and whose dot is small).
+- Worst offset should be **~1px** on a 52px key. It was 5.6px.
+- Measuring this: put the baseline probe *inside* the existing `.btn__label`.
+  Replacing the label throws away the transform being measured, and reports a
+  working fix as having done nothing.
 
 ### Settings & chrome
 - Level slider 1→7 mid-problem: display clears, keypad rebuilds, no errors.

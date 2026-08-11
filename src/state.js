@@ -52,14 +52,15 @@ export function freshCalc() {
     a: '', // first operand, as typed
     op: null, // '+', '−', '×'
     b: '', // second operand, as typed
-    result: null, // number once '=' is pressed
-    // 'a' | 'b' | 'done', plus two more once a mystery is asked for:
-    // 'whole'  — the total is being typed, the second part is hidden
-    // 'guess'  — the total is known and the child is hunting for the part
+    result: null, // the answer, once it is settled
+    // 'a' | 'b' | 'done', plus two the child has to do something in:
+    // 'answer' — the sum is built and they are typing what it makes
+    // 'guess'  — "?" asked for a missing part and they are hunting for it
+    // Both hold exactly one unknown. Two at once is not a question.
     phase: 'a',
     // Set to 'b' when the child pressed "?" — the second part is the mystery.
     unknown: null,
-    total: '', // the total, as typed, while a mystery is being set up
+    answer: '', // their answer to a finished sum, as typed
     // How many tries so far, so the app can offer more help rather than
     // repeating itself.
     tries: 0,

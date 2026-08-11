@@ -801,8 +801,11 @@ function numeralSpan(n, numeralIndex, color) {
  *
  * Silently does nothing where the measurement isn't available, which leaves the
  * numeral exactly where it would have been anyway.
+ *
+ * Exported because the keypad has the same problem: "?" is a heavy bowl with a
+ * small dot under it, and its box centre is nowhere near its visual one.
  */
-function centreGlyph(el) {
+export function centreGlyph(el) {
   if (!el.isConnected) return;
   const cs = getComputedStyle(el);
   const ctx =

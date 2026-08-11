@@ -313,14 +313,17 @@ function viewCycle() {
   const { c, a, b, result } = calcParts();
   const biggest = Math.max(a || 0, b || 0, result || 0);
 
-  // Mid-mystery only three things are worth looking at: the question, the two
-  // known amounts as things, and the bond that shows the gap. Make-a-ten and
-  // the rest all assume a finished sum, and several would simply answer it.
-  if (c.phase === 'whole' || c.phase === 'guess') {
-    const mystery = [{ mode: 'numeral' }];
-    if (biggest <= MAX_DRAWN) mystery.push({ mode: 'objects' });
-    if (bondNumbers()) mystery.push({ mode: 'bond' });
-    return mystery;
+  // While a question is open — a missing part to find, or an answer to work
+  // out — only what helps is worth showing: the question itself, the amounts as
+  // things that can be counted, and the bond that shows the gap. Make-a-ten and
+  // the rest all assume a finished sum, and several of them would simply answer
+  // it, which is the one thing this screen must not do.
+  if (c.phase === 'answer' || c.phase === 'guess') {
+    const working = [{ mode: 'numeral' }];
+    if (biggest <= MAX_DRAWN) working.push({ mode: 'objects' });
+    if (bondNumbers()) working.push({ mode: 'bond' });
+    if (biggest > MAX_DRAWN) working.push({ mode: 'tenframe' });
+    return working;
   }
 
   const views = [{ mode: 'numeral' }];
@@ -537,9 +540,17 @@ function updateHint() {
     return;
   }
 
+  // A question is open. Counting the picture is how you answer it, so that hint
+  // still wins where it applies — but where it doesn't, say what is being asked
+  // for rather than offering another way to look at it.
+  const asking = state.calc.phase === 'answer' || state.calc.phase === 'guess';
+
   if (countingOffered()) {
     icons.textContent = `👆 ${material}`;
-    text.textContent = 'Touch each one to count it';
+    text.textContent = asking ? 'Count them, then type your answer' : 'Touch each one to count it';
+  } else if (asking) {
+    icons.textContent = '👆 🔢';
+    text.textContent = 'Type your answer';
   } else {
     icons.textContent = '👆 ✨';
     text.textContent = 'Tap to see it another way';
@@ -558,8 +569,23 @@ function describeDisplay() {
     return;
   }
   const { c, a, b, result } = calcParts();
+  const word =
+    c.op === '+' ? 'plus' : c.op === '−' ? 'minus' : c.op === '×' ? 'times' : 'shared between';
+  // While a question is open the label has to *be* the question. Reading out a
+  // finished sum would hand a screen-reader user the answer they were asked for.
+  if (c.phase === 'answer') {
+    displayEl.setAttribute('aria-label', `${a} ${word} ${b} equals what? Type your answer.`);
+    return;
+  }
+  if (c.phase === 'guess') {
+    displayEl.setAttribute(
+      'aria-label',
+      `${a} ${word} what, equals ${result}? Type the missing number.`
+    );
+    return;
+  }
   const parts = [a];
-  if (c.op) parts.push(c.op === '+' ? 'plus' : c.op === '−' ? 'minus' : 'times', b === null ? '' : b);
+  if (c.op) parts.push(word, b === null ? '' : b);
   if (result !== null) parts.push('equals', result);
   displayEl.setAttribute(
     'aria-label',
@@ -763,12 +789,13 @@ function renderCalcMode() {
     table.appendChild(line);
 
     // Row 3 — the answer, with the parts still visible inside the whole. While
-    // a mystery's total is being typed it is the total that goes here, and an
-    // empty slot rather than a second question mark: only one thing is unknown.
-    if (c.phase === 'whole') {
-      const typed = c.total === '' ? null : Number(c.total);
+    // the child is working one out it is their own answer that goes here, over
+    // a waiting slot, and in their own colour rather than the green the app
+    // uses for a settled answer: it isn't one until they have checked it.
+    if (c.phase === 'answer') {
+      const typed = c.answer === '' ? null : Number(c.answer);
       table.appendChild(
-        row('=', typed, view, { uniformColor: colorA, awaiting: typed === null }, true)
+        row('=', typed, view, { uniformColor: colorA, awaiting: typed === null, pending: true }, true)
       );
     } else {
       table.appendChild(row('=', result, view, resultOptions(c, a, b, result), true));
@@ -841,7 +868,10 @@ const visualModes = new Set(['objects', 'tenframe']);
 
 function row(sign, value, view, opts = {}, isResult = false) {
   const el = document.createElement('div');
-  el.className = 'equation__row' + (isResult ? ' equation__row--result' : '');
+  el.className =
+    'equation__row' +
+    (isResult ? ' equation__row--result' : '') +
+    (opts.pending ? ' equation__row--pending' : '');
 
   const signEl = document.createElement('div');
   signEl.className = 'equation__sign';
@@ -884,7 +914,7 @@ function row(sign, value, view, opts = {}, isResult = false) {
       // Give each row of a visual equation its own coloured plate so the parts
       // stay traceable from the numbers above into the answer below.
       forceChip: mode === 'objects',
-      numeralColor: isResult ? resultColor() : null,
+      numeralColor: isResult && !opts.pending ? resultColor() : null,
       ...styleOpts(),
     });
     if (opts.gather) quantity.classList.add('gather');

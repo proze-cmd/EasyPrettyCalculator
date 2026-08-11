@@ -6,6 +6,7 @@ import { state, currentLevel, freshCalc, resetView } from './state.js';
 import { NUMBER_BUTTON_COLORS } from './config.js';
 import { renderDisplay } from './display.js';
 import { pop, sparkle, confetti, pressFeedback } from './animate.js';
+import { centreGlyph } from './represent.js';
 import { playPop, playTap, playWin, playClear, unlockAudio } from './sound.js';
 import { say, saySequence, opWord, equationPhrase, cancelSpeech } from './speech.js';
 
@@ -32,11 +33,11 @@ export function initKeypad() {
 function maxAllowed() {
   const level = currentLevel();
   const c = state.calc;
-  // Typing the total of a mystery is bounded only by the level. How big the
-  // missing part may be is the same question as how big a second operand may
-  // be, so a guess is bounded exactly as 'b' would be — which is the level's
-  // rule, already in force, and gives nothing away.
-  if (c.phase === 'whole') return level.maxValue;
+  // An answer is bounded only by the level — bounding it any tighter would be
+  // a hint. How big the *missing part* of a mystery may be is the same question
+  // as how big a second operand may be, so a guess is bounded exactly as 'b'
+  // would be, which is the level's rule and already in force.
+  if (c.phase === 'answer') return level.maxValue;
   if ((c.phase !== 'b' && c.phase !== 'guess') || !c.op) return level.maxValue;
 
   const a = Number(c.a || 0);
@@ -63,7 +64,7 @@ function candidate(current, digit) {
 function digitBlocked(digit) {
   const c = state.calc;
   if (c.phase === 'done') return false; // a new problem is about to start
-  const current = c.phase === 'a' ? c.a : c.phase === 'whole' ? c.total : c.b;
+  const current = c.phase === 'a' ? c.a : c.phase === 'answer' ? c.answer : c.b;
   const value = candidate(current, digit);
   if (value > maxAllowed()) return true;
 
@@ -160,10 +161,32 @@ function buildCalcKeypad(level) {
 }
 
 /**
- * "?" hides the second part and asks for the total instead, turning 5 + 4 = 9
- * into 5 + ? = 9. The child then has to find the part rather than be told it —
- * which is the number bond asked as a question, and the one place in the app
- * where the answer comes from them instead of from us.
+ * Pick the total for a mystery — the number the child is aiming at.
+ *
+ * Every total that leaves something to find: at least one to add, at least one
+ * to take away. Ten and the tens are the benchmarks worth practising against,
+ * so they come up more often than the rest — but not every time, or it stops
+ * being a question and becomes a habit.
+ */
+function pickMysteryTotal(a, op) {
+  const level = currentLevel();
+  const totals = [];
+  if (op === '+') for (let t = a + 1; t <= level.maxValue; t += 1) totals.push(t);
+  else if (op === '−') for (let t = 0; t <= a - 1; t += 1) totals.push(t);
+  if (!totals.length) return null;
+  const round = totals.filter((t) => t % 10 === 0 || t === level.maxValue);
+  const pool = round.length && Math.random() < 0.5 ? round : totals;
+  return pool[Math.floor(Math.random() * pool.length)];
+}
+
+/**
+ * "?" turns the sum around: instead of 5 + 4 = ? you get 5 + ? = 9, and the
+ * child has to find the missing part. That is the number bond asked as a
+ * question, and the road to subtraction and to algebra.
+ *
+ * The app supplies the total. It used to ask the child for that too — "5 and
+ * what makes how many?" — which is two unknowns in one breath and not a
+ * question anyone can answer. One unknown, always.
  */
 function pressMystery(btn) {
   unlockAudio();
@@ -173,23 +196,56 @@ function pressMystery(btn) {
     refuseSoftly(btn, 'Pick a number and a sign first');
     return;
   }
+  const a = Number(c.a);
+  const total = pickMysteryTotal(a, c.op);
+  if (total === null) {
+    // Nothing left to find. Say which way the wall is rather than sulking.
+    refuseSoftly(
+      btn,
+      c.op === '−'
+        ? 'There is nothing to take away from zero. Pick a bigger number.'
+        : `${a} is already as big as this level goes. Pick a smaller number.`
+    );
+    return;
+  }
   c.b = '';
   c.unknown = 'b';
-  c.phase = 'whole';
+  c.result = total;
+  c.phase = 'guess';
   c.tries = 0;
   resetView();
-  renderDisplay(false);
+  renderDisplay(true);
   if (btn) pressFeedback(btn);
   playTap();
-  say(c.op === '−' ? `${c.a} take away what, to leave how many?` : `${c.a} and what makes how many?`);
+  say(c.op === '−' ? `${a} take away what, leaves ${total}?` : `${a} and what makes ${total}?`);
   refreshKeys();
 }
 
+/**
+ * A key.
+ *
+ * The label lives in its own element so it can be nudged into the middle of the
+ * key without fighting the press animations, which transform the button itself.
+ * Two things are wrong with simply centring it:
+ *
+ *   - a key is not its box. The `0 6px 0` shadow is the side of a 3D key, so
+ *     what you see is 6px taller than the box and its middle is 3px lower —
+ *     that part is handled in the stylesheet, since it is the same everywhere;
+ *   - and centring a line of text does not centre the ink in it. "?" has a
+ *     heavy bowl and a small dot, so its ink sat 2.6px above the middle even
+ *     after the box was right.
+ */
 function makeButton(label, colorClass) {
   const b = document.createElement('button');
   b.className = 'btn ' + colorClass;
   b.type = 'button';
-  b.textContent = label;
+  const text = document.createElement('span');
+  text.className = 'btn__label';
+  text.textContent = label;
+  b.appendChild(text);
+  // Sizes only exist once it is in the document, and the font size is a clamp
+  // on the viewport, so this is redone whenever the keypad is rebuilt.
+  requestAnimationFrame(() => centreGlyph(text));
   return b;
 }
 
@@ -256,14 +312,14 @@ function pressDigit(d, btn) {
   const cc = state.calc;
 
   if (cc.phase === 'a') cc.a = normalizeEntry(cc.a + String(d));
-  else if (cc.phase === 'whole') cc.total = normalizeEntry(cc.total + String(d));
+  else if (cc.phase === 'answer') cc.answer = normalizeEntry(cc.answer + String(d));
   else cc.b = normalizeEntry(cc.b + String(d));
 
   resetView();
   renderDisplay(true);
   if (btn) pressFeedback(btn);
   playPop();
-  say(cc.phase === 'a' ? cc.a : cc.phase === 'whole' ? cc.total : cc.b);
+  say(cc.phase === 'a' ? cc.a : cc.phase === 'answer' ? cc.answer : cc.b);
   refreshKeys();
 }
 
@@ -321,9 +377,16 @@ function pressOp(op, btn) {
   markInteracted();
   const c = state.calc;
 
+  if (c.phase === 'answer' || c.phase === 'guess') {
+    // A question is on the table. Changing the sum underneath it would leave
+    // the child answering something that is no longer being asked.
+    refuseSoftly(btn, 'Finish this one first');
+    return;
+  }
+
   if (c.phase === 'done' && c.result !== null) {
     // Continue calculating from the answer.
-    state.calc = { a: String(c.result), op, b: '', result: null, phase: 'b' };
+    state.calc = { ...freshCalc(), a: String(c.result), op, phase: 'b' };
   } else if (c.phase === 'a') {
     if (c.a === '') {
       // Nothing to operate on yet — say so rather than being a dead button.
@@ -357,7 +420,7 @@ function pressEquals(btn) {
   markInteracted();
   const c = state.calc;
 
-  if (c.phase === 'whole') return commitWhole(btn);
+  if (c.phase === 'answer') return checkAnswer(btn);
   if (c.phase === 'guess') return checkGuess(btn);
 
   if (c.phase !== 'b' || c.a === '' || c.b === '' || !c.op) {
@@ -366,6 +429,9 @@ function pressEquals(btn) {
     playTap();
     return;
   }
+  // On a level that asks, "=" opens the answer instead of filling it in.
+  if (currentLevel().askAnswer) return askForAnswer(btn);
+
   c.result = compute(Number(c.a), c.op, Number(c.b));
   c.phase = 'done';
   resetView();
@@ -383,41 +449,74 @@ function pressEquals(btn) {
 }
 
 /**
- * The total of a mystery is now settled, so the hunt begins.
+ * Hand the sum back as a question.
  *
- * A total the sum can't reach is refused here rather than by dimming keys:
- * while "12" is being typed it passes through "1", and dimming everything
- * below the first number would make a perfectly good total impossible to type.
+ * A calculator that answers is a tool; one that asks is a lesson. So on a level
+ * that asks, "=" doesn't produce the answer — it opens an empty place for one,
+ * and the picture stays on screen to be counted.
  */
-function commitWhole(btn) {
+function askForAnswer(btn) {
   const c = state.calc;
-  if (c.total === '') {
-    if (btn) pressFeedback(btn);
-    playTap();
-    return;
-  }
-  const a = Number(c.a);
-  const total = Number(c.total);
-  if (c.op === '+' && total < a) {
-    refuseSoftly(btn, `We already have ${a}, so the total has to be bigger`);
-    return;
-  }
-  if (c.op === '−' && total > a) {
-    refuseSoftly(btn, `We only have ${a}, so what is left has to be smaller`);
-    return;
-  }
-  c.result = total;
-  c.phase = 'guess';
+  c.phase = 'answer';
+  c.answer = '';
   c.tries = 0;
   resetView();
   renderDisplay(true);
   if (btn) pressFeedback(btn);
   playTap();
-  say(
-    c.op === '−'
-      ? `${a} take away what, leaves ${total}?`
-      : `${a} and what makes ${total}?`
-  );
+  say(`${c.a} ${opWord(c.op)} ${c.b}. What does that make?`);
+  refreshKeys();
+}
+
+/**
+ * Their answer, checked.
+ *
+ * Control of error the way the materials do it: a wrong answer isn't marked
+ * wrong, it's told which way it is wrong — too few or too many — and the
+ * picture stays there to be counted. Nobody is told the answer; if it keeps not
+ * working, they are pointed at the thing that holds it.
+ */
+function checkAnswer(btn) {
+  const c = state.calc;
+  if (c.answer === '') {
+    if (btn) pressFeedback(btn);
+    playTap();
+    say('Type your answer');
+    return;
+  }
+  const a = Number(c.a);
+  const b = Number(c.b);
+  const truth = compute(a, c.op, b);
+  const tried = Number(c.answer);
+
+  if (tried === truth) {
+    c.result = truth;
+    c.answer = '';
+    c.phase = 'done';
+    resetView();
+    renderDisplay(true);
+    if (btn) pressFeedback(btn);
+    const resultEl = displayEl.querySelector('.equation__row--result');
+    if (resultEl) pop(resultEl);
+    playWin();
+    confetti(44);
+    sparkle(displayEl, 12);
+    saySequence(['Yes!', equationPhrase(a, c.op, b, truth)]);
+    refreshKeys();
+    return;
+  }
+
+  c.tries += 1;
+  c.answer = '';
+  renderDisplay(false);
+  if (btn) pressFeedback(btn);
+  playClear();
+  const which = tried < truth ? `${tried} is not enough` : `${tried} is too many`;
+  if (c.tries >= 2) {
+    saySequence([which, 'Tap the picture and count them all.']);
+  } else {
+    saySequence([which, 'Try again!']);
+  }
   refreshKeys();
 }
 
@@ -515,15 +614,17 @@ function backspace(btn) {
     c.phase = 'b';
   } else if (c.phase === 'guess') {
     // Back out of a guess, and then out of the mystery itself.
-    if (c.b !== '') c.b = c.b.slice(0, -1);
-    else c.phase = 'whole';
-  } else if (c.phase === 'whole') {
-    if (c.total !== '') {
-      c.total = c.total.slice(0, -1);
+    if (c.b !== '') {
+      c.b = c.b.slice(0, -1);
     } else {
       c.unknown = null;
+      c.result = null;
       c.phase = 'b';
     }
+  } else if (c.phase === 'answer') {
+    // Back out of an answer, and then back to editing the sum.
+    if (c.answer !== '') c.answer = c.answer.slice(0, -1);
+    else c.phase = 'b';
   } else if (c.phase === 'b') {
     if (c.b !== '') {
       c.b = c.b.slice(0, -1);
@@ -584,6 +685,8 @@ function handlePhysicalKey(e) {
   } else if (e.key === '/' && level.ops.includes('÷')) {
     e.preventDefault();
     pressOp('÷', null);
+  } else if (e.key === '?' && level.mystery) {
+    pressMystery(null);
   } else if (e.key === 'Enter' || e.key === '=') {
     e.preventDefault();
     pressEquals(null);

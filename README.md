@@ -78,13 +78,23 @@ Other pedagogy baked in:
   A circle draws its dots whenever they can still be read and shows its numeral
   when they can't — decided from how the dots actually land, not from a rule
   about how big the number is.
+- **The child answers.** On *Adding to 10*, **=** doesn't produce the answer —
+  it opens an empty place for one, and waits. The picture stays on screen to be
+  counted. A wrong answer isn't marked wrong; it's told which way it is wrong
+  ("8 is not enough"), and if it keeps not working the app points at the thing
+  that holds the answer rather than saying the same sentence louder. Nobody is
+  ever told the answer. A calculator that answers is a tool; one that asks is a
+  lesson — and one flag in [`src/config.js`](src/config.js) turns any level into
+  the second kind.
 - **The mystery number.** Press **?** and the sum turns around: instead of
-  `5 + 4 = ?` you get **`5 + ? = 9`**, and the child has to find the part. This
-  is the one place in the app where the answer comes from them. A wrong guess
-  isn't marked wrong — it's told what it actually makes ("5 plus 3 makes 8"),
-  and the bond shows the nine as five solid dots and **four empty places**, so
-  the answer is sitting there waiting to be counted. That's control of error the
-  way the materials do it: the child checks themselves.
+  `5 + 4 = ?` you get **`5 + ? = 9`**, and the child has to find the part.
+  The app supplies the total, favouring ten and the tens; the child supplies the
+  part. **One unknown, never two** — "five and what makes how many?" is not a
+  question anyone can answer, which is exactly what the first version asked.
+  A wrong guess isn't marked wrong — it's told what it actually makes ("5 plus 3
+  makes 8"), and the bond shows the nine as five solid dots and **four empty
+  places**, so the answer is sitting there waiting to be counted. That's control
+  of error the way the materials do it: the child checks themselves.
 - **Meeting the number.** One sun, two eyes, three corners, five fingers, seven
   colours in a rainbow. Waldorf introduces a number by its character before its
   quantity, so on *Count to 10* one tap shows where that number lives in the
@@ -186,7 +196,7 @@ invariants that must never break, and the measurement traps that have fooled us.
 | 2  | Count by 2s        | Skip counting in pairs — and odd vs even     |
 | 3  | Count by 5s        | Skip counting to 50                          |
 | 4  | Count by 10s       | Buttons 10, 20, 30 … 100                     |
-| 5  | Adding to 10       | Addition, answers up to 10                   |
+| 5  | Adding to 10       | Addition to 10 — **the child types the answer** |
 | 6  | Add & Take Away    | Addition and subtraction to 10               |
 | 7  | Numbers to 20      | Add/subtract within 20                       |
 | 8  | Big Numbers to 100 | Two-digit add/subtract, place value          |

@@ -78,6 +78,12 @@ export const LEVELS = [
     // the number bond made into a question, and the road to subtraction and
     // to algebra. It belongs with adding and taking away, not with groups.
     mystery: true,
+    // And the sum itself becomes a question rather than a demonstration:
+    // pressing = opens an empty answer for the child to fill in, instead of
+    // filling it in for them. A calculator that answers is a tool; one that
+    // asks is a lesson. Turn this on for another level and that level starts
+    // asking too.
+    askAnswer: true,
   },
   {
     id: 6,

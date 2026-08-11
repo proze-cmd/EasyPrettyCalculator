@@ -968,94 +968,177 @@ body.theme-calm .pairs__verdict--odd {
 }
 
 /* --- Writing the number -------------------------------------------------
-   A handwriting pad: ruled lines, one solid numeral to copy, and two hollow
-   ones to trace over. Montessori gives children sandpaper numerals for the
-   same reason — the shape has to be made, not only recognised.
+   A real handwriting guide: a solid line top and bottom with a dashed one down
+   the middle, so the numeral has somewhere to sit. The numeral itself is the
+   trail a pen leaves — a thick round-capped stroke laid down in the order a
+   hand makes it — and then the child gets to lay it down themselves.
    ------------------------------------------------------------------------ */
 
-.rep--pad {
-  width: 100%;
-}
+.rep--pad { width: 100%; }
 .pad {
   width: 100%;
-  max-width: 460px;
-  border-radius: 14px;
-  background: repeating-linear-gradient(
-    to bottom,
-    #fdfdf7 0,
-    #fdfdf7 calc(var(--rule) - 2px),
-    #cfe0ef calc(var(--rule) - 2px),
-    #cfe0ef var(--rule)
-  );
-  --rule: clamp(26px, 7vh, 46px);
+  max-width: 420px;
+  border-radius: 16px;
+  background: #fdfcf4;
   border: 2px solid #e6e2d2;
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.1);
-  padding: clamp(10px, 3vh, 22px) 14px;
-  position: relative;
-  overflow: hidden;
+  padding: clamp(8px, 2.5vh, 18px) clamp(12px, 5vw, 30px);
 }
-/* The red margin every exercise book has. */
-.pad::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  left: clamp(16px, 6%, 34px);
-  width: 2px;
-  background: #f0a3a3;
+.pad__sheet {
+  display: block;
+  width: 100%;
+  height: auto;
+  /* The panel it sits in is shorter than the viewport — a phone at 320x568
+     leaves barely 300px — so the sheet is bounded well under half of it. */
+  max-height: min(38vh, 320px);
+  touch-action: none; /* the finger is drawing, not scrolling */
 }
-.pad__line {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: clamp(10px, 5vw, 34px);
-  padding-left: clamp(14px, 5%, 30px);
+.pad__rule {
+  stroke: #b9cfe0;
+  stroke-width: 1.6;
 }
-.pad__digit {
-  font-size: clamp(58px, min(20vw, 17vh), 150px);
+/* The dashed middle line every writing pad has. */
+.pad__rule--mid {
+  stroke-dasharray: 7 7;
+  stroke: #cfdeea;
+}
+/* The road: where the numeral is going to go. */
+.pad__ghost {
+  fill: none;
+  stroke: #e3e9ee;
+  stroke-width: 22;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+/* The ink itself. Round caps are what give the finished numeral soft ends. */
+.pad__ink {
+  fill: none;
+  stroke: #3c6ea5;
+  stroke-width: 20;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: stroke-dashoffset 0.55s ease;
+}
+/* While it is being written or traced the ink must follow exactly, with no
+   easing lagging behind the finger. */
+.pad--tracing .pad__ink { transition: none; }
+.pad__start {
+  fill: #ff8fab;
+  stroke: #fff;
+  stroke-width: 2;
+}
+.pad__startnum {
+  font-family: var(--font-round);
+  font-size: 11px;
   font-weight: 800;
-  line-height: 1;
+  fill: #fff;
+  text-anchor: middle;
 }
-.pad__digit--model {
-  color: #3c6ea5;
+/* The knob only appears once it is the child's turn. */
+.pad__knob {
+  fill: #ff4d94;
+  stroke: #fff;
+  stroke-width: 3;
+  opacity: 0;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.25));
+  cursor: grab;
 }
-/* Hollow, the way a practice page prints the ones you write over. */
-.pad__digit--trace {
-  color: transparent;
-  -webkit-text-stroke: 2.5px #9db8cf;
-  opacity: 0.75;
+.pad--tracing .pad__knob {
+  opacity: 1;
+  animation: knob-nudge 1.6s ease-in-out infinite;
 }
-body.theme-calm .pad {
-  background: repeating-linear-gradient(
-    to bottom,
-    #fbf7ee 0,
-    #fbf7ee calc(var(--rule) - 2px),
-    #ddd4c2 calc(var(--rule) - 2px),
-    #ddd4c2 var(--rule)
-  );
-  border-color: #e0d6c4;
+@keyframes knob-nudge {
+  0%, 100% { r: 13; }
+  50% { r: 16; }
 }
-body.theme-calm .pad::before { background: #d09a8a; }
-body.theme-calm .pad__digit--model { color: #7a6552; }
-body.theme-calm .pad__digit--trace { -webkit-text-stroke-color: #b7a894; }
+.pad--done .pad__ink { stroke: #0ca678; }
+/* Once they've written it, the numbered starts have done their job and would
+   only sit on top of the numeral the child just made. */
+.pad__start,
+.pad__startnum {
+  transition: opacity 0.4s ease;
+}
+.pad--done .pad__start,
+.pad--done .pad__startnum {
+  opacity: 0;
+}
 
-/* --- Grouping by enclosure ----------------------------------------------
-   The same things, all alike, with a ring drawn round each handful. Colour
-   coding says "these are different kinds"; a ring says "the nine did not
-   change, only the way we looked at it did".
+body.theme-calm .pad { background: #fbf7ee; border-color: #e0d6c4; }
+body.theme-calm .pad__rule { stroke: #d8cbb6; }
+body.theme-calm .pad__rule--mid { stroke: #e2d8c8; }
+body.theme-calm .pad__ghost { stroke: #ece5d8; }
+body.theme-calm .pad__ink { stroke: #7a6552; }
+body.theme-calm .pad__start { fill: #c2705a; }
+body.theme-calm .pad__knob { fill: #b5654e; }
+body.theme-calm .pad--done .pad__ink { stroke: #5c8a5e; }
+
+@media (prefers-reduced-motion: reduce) {
+  .pad__knob { animation: none; }
+}
+
+/* --- Circling groups ----------------------------------------------------
+   The things stay exactly where they are; a ring is drawn round each handful,
+   dash by dash, so the grouping reads as something being *done* rather than a
+   border that was always there.
    ------------------------------------------------------------------------ */
 
-.grp--ring {
-  background: rgba(74, 58, 85, 0.045);
-  border: 3px dashed rgba(74, 58, 85, 0.42);
-  /* Generously rounded, but not a circle: the things inside sit on a square
-     dice grid, and a circle drawn round a square leaves the corner ones
-     hanging outside the very ring that is supposed to be holding them. */
-  border-radius: 30px;
+.rep--circled { width: 100%; }
+/* One arrangement, not several piles: the spacing between things is the same
+   everywhere, so a ring drawn round some of them is plainly a decision about
+   how to look rather than a fact about how they were laid out. */
+.circle-stage {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--gap);
+  padding: calc(var(--item) * 0.55);
+  max-width: 100%;
 }
-body.theme-calm .grp--ring {
-  border-color: rgba(90, 74, 63, 0.45);
-  background: rgba(90, 74, 63, 0.05);
+.circle-row {
+  display: flex;
+  gap: var(--gap);
+  justify-content: center;
+}
+.circle-block {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap);
+  /* Blocks sit right against each other; only the ring separates them. */
+  margin: 0;
+}
+.circle-stage .circle-block + .circle-block {
+  margin-top: calc(var(--item) * 0.85);
+}
+/* Room between the last of one run and the first of the next, so the two rings
+   have somewhere to sit without touching. */
+.circle-gap {
+  margin-left: calc(var(--item) * 0.75);
+}
+.ring {
+  position: absolute;
+  pointer-events: none;
+  overflow: visible;
+}
+.ring__path {
+  fill: none;
+  stroke: rgba(74, 58, 85, 0.62);
+  stroke-width: 3.5;
+  stroke-linecap: round;
+  /* One dash the length of the whole outline, parked out of sight, then walked
+     back in. `steps()` is what makes it arrive a piece at a time instead of
+     sweeping smoothly — the pen putting down one dash, then the next. */
+  stroke-dasharray: 100 100;
+  stroke-dashoffset: 100;
+  animation: ring-draw 1.15s steps(16) forwards;
+}
+@keyframes ring-draw {
+  to { stroke-dashoffset: 0; }
+}
+body.theme-calm .ring__path { stroke: rgba(90, 74, 63, 0.62); }
+@media (prefers-reduced-motion: reduce) {
+  .ring__path { animation: none; stroke-dashoffset: 0; }
 }
 
 /* --- Meeting the number ------------------------------------------------

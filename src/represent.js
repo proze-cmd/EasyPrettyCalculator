@@ -20,6 +20,10 @@ import {
 } from './config.js';
 import { groupsFor, pipCells, waysToMake } from './arrange.js';
 import { state } from './state.js';
+import { strokesFor, padWidth, TOP, MIDDLE, BASE } from './strokes.js';
+import { confetti } from './animate.js';
+import { playSwap, playWin } from './sound.js';
+import { say } from './speech.js';
 
 /**
  * Colours that live in JavaScript rather than CSS have to be picked per theme
@@ -64,7 +68,6 @@ export function renderQuantity(n, opts = {}) {
     forceChip = false,
     zeroNote = false,
     numeralColor = null,
-    ringed = false,
   } = opts;
 
   const value = Math.round(n);
@@ -103,7 +106,6 @@ export function renderQuantity(n, opts = {}) {
         uniformColor,
         removedGroups,
         forceChip,
-        ringed,
       });
   }
 }
@@ -113,7 +115,7 @@ export function renderQuantity(n, opts = {}) {
 // ---------------------------------------------------------------------------
 
 function renderGrouped(n, o) {
-  const { mode, groups, size, themeIndex, groupColors, uniformColor, removedGroups, forceChip, ringed } = o;
+  const { mode, groups, size, themeIndex, groupColors, uniformColor, removedGroups, forceChip } = o;
   const wrap = shell('rep--grouped', size);
 
   const list = groups && groups.length ? groups : [n];
@@ -132,12 +134,7 @@ function renderGrouped(n, o) {
       (groupColors && groupColors[gi]) || uniformColor || palette[gi % palette.length];
     const grp = document.createElement('div');
     grp.className = 'grp';
-    if (ringed) {
-      // Same things, no colour coding — the grouping is done by drawing a ring
-      // round each handful. A child can see that the nine did not change when
-      // we decided to see it as five and four; only the way we looked did.
-      grp.classList.add('grp--chip', 'grp--ring');
-    } else if (chip) {
+    if (chip) {
       grp.classList.add('grp--chip');
       grp.style.background = color.soft;
       grp.style.borderColor = color.solid;
@@ -904,39 +901,411 @@ export function renderBlockNumeral(n, styleIndex) {
 }
 
 /**
- * The number on a ruled pad, the way it is written.
+ * The number on a handwriting pad, the way it is actually written.
  *
- * A child meets a numeral twice: once as a quantity, and once as a shape their
- * own hand has to make. Montessori gives them sandpaper numerals to trace for
- * exactly this reason. Here the first is solid — the one to copy — and the rest
- * are hollow, the way a handwriting pad lays out its practice.
+ * Three things a printed numeral can't do. The rules are the ones on a real
+ * writing pad — a solid line top and bottom with a dashed one down the middle
+ * — so the numeral has somewhere to sit rather than floating. The numeral is
+ * drawn as the trail a pen leaves, filling in stroke order with a numbered dot
+ * where each stroke begins, so a child sees *where to start* and which way to
+ * go. And then it empties again and hands over: drag the dot round the path
+ * yourself, and it fills in behind your finger.
+ *
+ * Montessori gives children sandpaper numerals for exactly this. The shape of
+ * a number is something the hand learns, not only the eye.
  */
 export function renderPad(n) {
   const wrap = shell('rep--pad', 'big');
+  const strokes = strokesFor(n);
+  if (!strokes) return wrap;
+
+  const W = padWidth(n);
+  const H = 150;
+  const NS = 'http://www.w3.org/2000/svg';
 
   const pad = document.createElement('div');
   pad.className = 'pad';
 
-  const line = document.createElement('div');
-  line.className = 'pad__line';
+  const svg = document.createElementNS(NS, 'svg');
+  svg.setAttribute('viewBox', `-10 0 ${W + 20} ${H}`);
+  svg.setAttribute('class', 'pad__sheet');
+  svg.setAttribute('role', 'img');
+  svg.setAttribute('aria-label', `Trace the number ${n}`);
 
-  const model = document.createElement('span');
-  model.className = 'pad__digit pad__digit--model pop-in';
-  model.textContent = String(n);
-  line.appendChild(model);
+  // The guide rules.
+  [
+    [TOP, 'pad__rule'],
+    [MIDDLE, 'pad__rule pad__rule--mid'],
+    [BASE, 'pad__rule'],
+  ].forEach(([y, cls]) => {
+    const line = document.createElementNS(NS, 'line');
+    line.setAttribute('x1', -10);
+    line.setAttribute('x2', W + 10);
+    line.setAttribute('y1', y);
+    line.setAttribute('y2', y);
+    line.setAttribute('class', cls);
+    svg.appendChild(line);
+  });
 
-  for (let i = 0; i < 2; i++) {
-    const trace = document.createElement('span');
-    trace.className = 'pad__digit pad__digit--trace pop-in';
-    trace.style.animationDelay = (i + 1) * 180 + 'ms';
-    trace.textContent = String(n);
-    line.appendChild(trace);
-  }
+  // Each stroke twice over: the road underneath, and the ink laid along it.
+  const ghosts = [];
+  const inks = [];
+  strokes.forEach((d) => {
+    const ghost = document.createElementNS(NS, 'path');
+    ghost.setAttribute('d', d);
+    ghost.setAttribute('class', 'pad__ghost');
+    svg.appendChild(ghost);
+    ghosts.push(ghost);
+  });
+  strokes.forEach((d) => {
+    const ink = document.createElementNS(NS, 'path');
+    ink.setAttribute('d', d);
+    ink.setAttribute('class', 'pad__ink');
+    svg.appendChild(ink);
+    inks.push(ink);
+  });
 
-  pad.appendChild(line);
+  // Where each stroke begins, numbered — the worksheet's "1" and "2".
+  strokes.forEach((d, i) => {
+    const probe = document.createElementNS(NS, 'path');
+    probe.setAttribute('d', d);
+    svg.appendChild(probe);
+    const start = probe.getPointAtLength(0);
+    probe.remove();
+
+    const dot = document.createElementNS(NS, 'circle');
+    dot.setAttribute('cx', start.x);
+    dot.setAttribute('cy', start.y);
+    dot.setAttribute('r', 9);
+    dot.setAttribute('class', 'pad__start');
+    svg.appendChild(dot);
+
+    const label = document.createElementNS(NS, 'text');
+    label.setAttribute('x', start.x);
+    label.setAttribute('y', start.y + 4.5);
+    label.setAttribute('class', 'pad__startnum');
+    label.textContent = String(i + 1);
+    svg.appendChild(label);
+  });
+
+  // The knob the child drags.
+  const knob = document.createElementNS(NS, 'circle');
+  knob.setAttribute('r', 13);
+  knob.setAttribute('class', 'pad__knob');
+  svg.appendChild(knob);
+
+  // A finger on the sheet is drawing, not asking for the next view — but only
+  // once it is actually the child's turn. Swallowing every tap would trap them
+  // on the pad with no way out; swallowing none would flip the screen away
+  // mid-stroke. So the sheet only holds on to taps while it is being traced,
+  // and the margin around it always turns the page like anywhere else.
+  ['click', 'pointerdown', 'pointerup'].forEach((type) =>
+    svg.addEventListener(type, (e) => {
+      if (svg.classList.contains('pad--tracing') || svg.classList.contains('pad--hold')) {
+        e.stopPropagation();
+      }
+    })
+  );
+
+  pad.appendChild(svg);
   wrap.appendChild(pad);
 
-  wrap.setAttribute('role', 'img');
-  wrap.setAttribute('aria-label', `Writing the number ${n}`);
+  // Sizes only exist once the SVG is in the document.
+  requestAnimationFrame(() => runPad(svg, inks, ghosts, knob, n));
   return wrap;
+}
+
+/**
+ * Show it being written, empty it again, then hand the pen over.
+ *
+ * The demonstration and the child's turn share one mechanism: how far along
+ * each stroke the ink has reached. Showing it just animates that number;
+ * tracing lets a finger drive it.
+ */
+function runPad(svg, inks, ghosts, knob, n) {
+  const lengths = inks.map((p) => p.getTotalLength());
+  lengths.forEach((len, i) => {
+    inks[i].style.strokeDasharray = len;
+    inks[i].style.strokeDashoffset = len;
+    ghosts[i].style.strokeDasharray = 'none';
+  });
+
+  const place = (stroke, dist) => {
+    const pt = inks[stroke].getPointAtLength(dist);
+    knob.setAttribute('cx', pt.x);
+    knob.setAttribute('cy', pt.y);
+  };
+  const fill = (stroke, dist) => {
+    inks[stroke].style.strokeDashoffset = Math.max(0, lengths[stroke] - dist);
+  };
+
+  let cancelled = false;
+  const stop = () => { cancelled = true; };
+  svg.addEventListener('pad-stop', stop);
+
+  // --- the demonstration ---
+  const SPEED = 74; // grid units a second — the pace of a hand, not a machine
+  const BETWEEN = 420; // a beat between one stroke and the next
+  let stroke = 0;
+  let dist = 0;
+  let last = null;
+
+  function step(now) {
+    if (cancelled || !svg.isConnected) return;
+    if (last === null) last = now;
+    dist += ((now - last) / 1000) * SPEED;
+    last = now;
+
+    if (dist >= lengths[stroke]) {
+      fill(stroke, lengths[stroke]);
+      place(stroke, lengths[stroke]);
+      stroke += 1;
+      dist = 0;
+      if (stroke < inks.length) {
+        // Lift the pen, move to where the next stroke starts, and begin again.
+        place(stroke, 0);
+        last = null;
+        setTimeout(() => { if (!cancelled && svg.isConnected) requestAnimationFrame(step); }, BETWEEN);
+        return;
+      }
+      if (stroke >= inks.length) {
+        // Written. Pause on the finished numeral, then clear it and offer the
+        // pen — the child has just been shown the route they are about to take.
+        setTimeout(() => {
+          if (cancelled || !svg.isConnected) return;
+          svg.classList.add('pad--erasing');
+          inks.forEach((p, i) => { p.style.strokeDashoffset = lengths[i]; });
+          setTimeout(() => {
+            if (cancelled || !svg.isConnected) return;
+            svg.classList.remove('pad--erasing');
+            offerTrace(svg, inks, knob, lengths, place, fill, n);
+          }, 700);
+        }, 900);
+        return;
+      }
+    }
+    fill(stroke, dist);
+    place(stroke, dist);
+    requestAnimationFrame(step);
+  }
+  place(0, 0);
+  requestAnimationFrame(step);
+}
+
+/** The child's turn: drag the knob along and the ink follows the finger. */
+function offerTrace(svg, inks, knob, lengths, place, fill, n) {
+  let stroke = 0;
+  let dist = 0;
+  let dragging = false;
+  svg.classList.add('pad--tracing');
+  place(0, 0);
+
+  // Where along this stroke is the pointer? Sampling beats maths here: the
+  // paths are short and this runs once per move.
+  const nearest = (pt) => {
+    const path = inks[stroke];
+    const len = lengths[stroke];
+    let best = dist;
+    let bestD = Infinity;
+    const from = Math.max(0, dist - len * 0.06);
+    const to = Math.min(len, dist + len * 0.22);
+    const steps = 40;
+    for (let i = 0; i <= steps; i++) {
+      const at = from + ((to - from) * i) / steps;
+      const p = path.getPointAtLength(at);
+      const d = (p.x - pt.x) ** 2 + (p.y - pt.y) ** 2;
+      if (d < bestD) { bestD = d; best = at; }
+    }
+    return { at: best, off: Math.sqrt(bestD) };
+  };
+
+  const toGrid = (e) => {
+    const box = svg.getBoundingClientRect();
+    const vb = svg.viewBox.baseVal;
+    return {
+      x: vb.x + ((e.clientX - box.left) / box.width) * vb.width,
+      y: vb.y + ((e.clientY - box.top) / box.height) * vb.height,
+    };
+  };
+
+  const onDown = (e) => {
+    const pt = toGrid(e);
+    const here = inks[stroke].getPointAtLength(dist);
+    if ((pt.x - here.x) ** 2 + (pt.y - here.y) ** 2 > 34 ** 2) return;
+    dragging = true;
+    svg.setPointerCapture(e.pointerId);
+    e.preventDefault();
+  };
+
+  const onMove = (e) => {
+    if (!dragging) return;
+    const { at, off } = nearest(toGrid(e));
+    if (off > 30) return; // wandered off the road; wait for them to come back
+    if (at > dist) {
+      dist = at;
+      fill(stroke, dist);
+      place(stroke, dist);
+    }
+    if (dist >= lengths[stroke] - 1) {
+      fill(stroke, lengths[stroke]);
+      if (stroke < inks.length - 1) {
+        stroke += 1;
+        dist = 0;
+        place(stroke, 0);
+        playSwap();
+      } else {
+        dragging = false;
+        svg.classList.add('pad--done');
+        svg.classList.remove('pad--tracing');
+        // The very tap that finished the numeral must not also turn the page —
+        // the child has earned a moment to look at what they just wrote.
+        svg.classList.add('pad--hold');
+        setTimeout(() => svg.classList.remove('pad--hold'), 1500);
+        playWin();
+        confetti(26);
+        say(`You wrote ${n}!`);
+      }
+    }
+  };
+
+  const onUp = () => { dragging = false; };
+
+  svg.addEventListener('pointerdown', onDown);
+  svg.addEventListener('pointermove', onMove);
+  svg.addEventListener('pointerup', onUp);
+  svg.addEventListener('pointercancel', onUp);
+}
+
+
+// ---------------------------------------------------------------------------
+// Circling groups — the same things, looked at differently
+// ---------------------------------------------------------------------------
+
+/**
+ * All the things together, and then a ring drawn round each handful.
+ *
+ * The plates view rearranges a nine into a pink five and a blue four, which
+ * risks reading as "there are two kinds of thing here". This one doesn't move
+ * anything and doesn't colour anything: the nine sits there, and a lasso is
+ * laid down round five of them, then round the other four. Nothing changed but
+ * the way we chose to look — which is the whole idea of a number having parts.
+ *
+ * The rings are drawn dash by dash rather than appearing, because a child needs
+ * to see the circling *happen* to read it as an act rather than a decoration.
+ */
+export function renderCircled(n, groups, themeIndex) {
+  const wrap = shell('rep--circled', 'big');
+  applyDensity(wrap, n);
+
+  const stage = document.createElement('div');
+  stage.className = 'circle-stage';
+
+  // Everything in ONE arrangement. This is the whole point of the view: the
+  // things are not sorted into piles, they are left exactly where they are and
+  // a ring is drawn round some of them. Small numbers go in a single line, so
+  // four cats really are four cats in a row with three of them circled.
+  const flat = n <= 5;
+  const runs = []; // which items belong to which group
+
+  if (flat) {
+    const row = document.createElement('div');
+    row.className = 'row circle-row';
+    let made = 0;
+    groups.forEach((count, gi) => {
+      const mine = [];
+      for (let i = 0; i < count; i++) {
+        const el = makeItem(themeIndex);
+        el.style.animationDelay = Math.min(made * 90, 700) + 'ms';
+        // A little more air between one group and the next, so the two rings
+        // have somewhere to sit without touching.
+        if (i === 0 && gi > 0) el.classList.add('circle-gap');
+        row.appendChild(el);
+        mine.push(el);
+        made++;
+      }
+      runs.push(mine);
+    });
+    stage.appendChild(row);
+  } else {
+    let made = 0;
+    groups.forEach((count) => {
+      const block = document.createElement('div');
+      block.className = 'circle-block';
+      const mine = [];
+      let placed = 0;
+      while (placed < count) {
+        const inRow = Math.min(5, count - placed);
+        const row = document.createElement('div');
+        row.className = 'row circle-row';
+        for (let i = 0; i < inRow; i++) {
+          const el = makeItem(themeIndex);
+          el.style.animationDelay = Math.min(made * 70, 700) + 'ms';
+          row.appendChild(el);
+          mine.push(el);
+          made++;
+        }
+        block.appendChild(row);
+        placed += inRow;
+      }
+      stage.appendChild(block);
+      runs.push(mine);
+    });
+  }
+
+  wrap.appendChild(stage);
+  // The rings can only be placed once the things they go round have a size.
+  requestAnimationFrame(() => drawRings(stage, runs, n));
+  return wrap;
+}
+
+/**
+ * Lay a ring round each run of things.
+ *
+ * Boxes come from offsetLeft/offsetTop rather than getBoundingClientRect: the
+ * items are still popping in, and a rect measured through a live transform puts
+ * the ring where the group briefly *appears* instead of where it is.
+ */
+function drawRings(stage, runs, itemCount) {
+  if (!stage.isConnected) return;
+  const NS = 'http://www.w3.org/2000/svg';
+  const startAfter = Math.min(itemCount * 90, 700) + 320;
+
+  runs.forEach((items, i) => {
+    if (!items.length) return;
+    let l = Infinity, t = Infinity, r = -Infinity, bm = -Infinity;
+    items.forEach((el) => {
+      l = Math.min(l, el.offsetLeft);
+      t = Math.min(t, el.offsetTop);
+      r = Math.max(r, el.offsetLeft + el.offsetWidth);
+      bm = Math.max(bm, el.offsetTop + el.offsetHeight);
+    });
+    const pad = Math.max(9, items[0].offsetWidth * 0.36);
+    const x = l - pad;
+    const y = t - pad;
+    const w = r - l + pad * 2;
+    const h = bm - t + pad * 2;
+
+    const svg = document.createElementNS(NS, 'svg');
+    svg.setAttribute('class', 'ring');
+    svg.setAttribute('aria-hidden', 'true');
+    svg.style.left = x + 'px';
+    svg.style.top = y + 'px';
+    svg.style.width = w + 'px';
+    svg.style.height = h + 'px';
+    svg.setAttribute('viewBox', `0 0 ${w} ${h}`);
+
+    const rect = document.createElementNS(NS, 'rect');
+    rect.setAttribute('x', 2);
+    rect.setAttribute('y', 2);
+    rect.setAttribute('width', Math.max(0, w - 4));
+    rect.setAttribute('height', Math.max(0, h - 4));
+    rect.setAttribute('rx', Math.min(w, h) * 0.38);
+    rect.setAttribute('pathLength', 100);
+    rect.setAttribute('class', 'ring__path');
+    // One dash as long as the whole outline, slid out of sight and then walked
+    // back in. Stepping it is what makes it arrive dash by dash.
+    rect.style.animationDelay = startAfter + i * 1000 + 'ms';
+    svg.appendChild(rect);
+    stage.appendChild(svg);
+  });
 }

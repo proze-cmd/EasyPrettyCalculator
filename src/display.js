@@ -26,6 +26,7 @@ import {
   emblemName,
   renderBlockNumeral,
   renderPad,
+  renderCircled,
 } from './represent.js';
 import { renderBond } from './bond.js';
 import {
@@ -277,6 +278,9 @@ function viewCycle() {
       // an identity of its own, and once as plain identical things with a ring
       // drawn round each handful. The second is the one that says the nine did
       // not change — only the way we chose to look at it did.
+      // The split twice over: rearranged onto coloured plates, and then simply
+      // circled where it stands. The second is the one that says nothing about
+      // the nine changed — only the way we chose to look at it.
       views.push({ mode: 'objects', decomp });
       views.push({ mode: 'ringed', decomp });
     }
@@ -588,13 +592,7 @@ function renderCountMode() {
 
   if (view.mode === 'ringed') {
     displayEl.appendChild(
-      renderQuantity(n, {
-        mode: 'objects',
-        decompIndex: view.decomp || 0,
-        size: 'big',
-        ringed: true,
-        ...styleOpts(),
-      })
+      renderCircled(n, groupsFor(n, view.decomp || 0), state.objectThemeIndex)
     );
     return;
   }

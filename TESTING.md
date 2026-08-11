@@ -117,9 +117,9 @@ seeing a number. **8 views**, in this order:
 |---|---|---|
 | 1 | paired | the numeral and the quantity together |
 | 2 | split on plates | the parts have identities: 9 is 5 and 4 |
-| 3 | split by ring | *same* things, grouped by enclosure — the nine didn't change |
+| 3 | circled | *same* things, not moved — rings drawn round subsets of one arrangement |
 | 4 | block numeral | the shape of the symbol, a new colour each lap |
-| 5 | ruled pad | the shape your hand has to make |
+| 5 | writing pad | stroke order, then the child traces it themselves |
 | 6 | emblem | where the number lives in the world |
 | 7 | rods | quantity as length, in its bead-stair colour |
 | 8 | ten-frame | the gap to ten |
@@ -127,9 +127,31 @@ seeing a number. **8 views**, in this order:
 - **Go round again** and the split changes: ten as 5+5, then 6+4, 7+3, 8+2,
   9+1. The numeral's colour changes too. Only the objects stay put, and only if
   the child pinned them.
-- **Rings must contain what's in them.** They're rounded rectangles, not
-  circles — a circle drawn round a square dice pattern leaves the corner items
-  hanging outside the ring meant to hold them.
+- **Circling is one arrangement, not two piles.** Press 4 → four things in a
+  single row, then a ring drawn *dash by dash* round the first group, then
+  another round the rest. If the things are sorted into separate clusters it has
+  become the plates view again and the point is lost. Every thing must end up
+  inside exactly one ring, and the rings must not touch.
+  - Measure ring boxes with `offsetLeft`/`offsetTop`: the things are still
+    popping in, and a rect read through a live transform puts the ring where the
+    group briefly *appears*.
+
+### The writing pad — check all of this
+- **Guides**: three rules, top and bottom solid, the middle one dashed.
+- **Stroke order**: 3, 4, 5 and 10 have two strokes; the rest have one. Each
+  start has a numbered pink dot. The ink has round caps.
+- It writes itself progressively, pauses on the finished numeral, wipes itself,
+  then shows the draggable knob (`pad--tracing`).
+- **Drag the knob**: the ink follows the finger and never runs ahead of it. Go
+  off the line and it waits. Finish stroke 1 and the knob jumps to stroke 2's
+  start. Finish both → green, confetti, "You wrote 3!".
+- **Two traps this feature has already fallen into:**
+  1. Swallowing every tap on the pad **trapped the child on the view** with no
+     way out. It may only swallow while actually being traced.
+  2. Not swallowing the tap that *completes* the trace flipped the page
+     instantly, so the child never saw what they wrote. Hence `pad--hold`.
+- Sanity-check the paths themselves by rendering all ten on one sheet — a 9
+  whose tail sweeps left reads as a `g`.
 - **Rods**: one bar → centred with its numeral **above**. Several bars (levels
   2–4) → left edges flush with a label beside each, because that's what makes a
   short bar visibly shorter.

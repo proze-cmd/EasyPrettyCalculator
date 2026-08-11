@@ -18,9 +18,10 @@ with Capacitor** later.
   count one-by-one. See [How numbers are drawn](#-how-numbers-are-drawn).
 - **Tap the display to transform it.** *Count to 10* — the level a child spends
   longest on — gives eight ways to see the same number: paired with its quantity,
-  split onto coloured plates, the same split ringed instead, the numeral as a
-  block of colour, the numeral on a ruled pad to trace, where the number lives in
-  the world, a bead bar, and a ten-frame. Later levels give fewer, all
+  split onto coloured plates, the same split circled where it stands, the numeral
+  as a block of colour, the numeral written stroke by stroke on a pad you can
+  trace yourself, where the number lives in the world, a bead bar, and a
+  ten-frame. Later levels give fewer, all
   conditional. A row of dots shows how many there are and jumps to any of them,
   and every view has to earn its tap.
 - **Numbers pop in** with bouncy animations, sparkles, and confetti on answers.
@@ -62,11 +63,12 @@ Other pedagogy baked in:
   back to the start shows the number split another way: ten is five and five,
   then six and four, then seven and three, eight and two, nine and one. The
   total never changes; only the pair does.
-- **Grouped by colour, then grouped by a ring.** The same split is shown twice
-  — once on tinted plates where each part has an identity of its own, and once
-  as plain identical things with a rounded container drawn round each handful.
-  The second is the one that says the nine didn't change; only the way we chose
-  to look at it did.
+- **Grouped by colour, then circled where they stand.** The same split twice:
+  once rearranged onto tinted plates where each part has an identity of its own,
+  and once left completely alone. In the second, four cats sit in a row and a
+  ring is *drawn* round three of them, dash by dash, then another round the one
+  left over. Nothing moves and nothing changes colour — which is the point. The
+  four didn't change; only the way we chose to look at it did.
 - **Part–whole colouring.** In `5 + 4`, the 5 is pink and the 4 is blue — and
   the answer is that same pink 5 beside that same blue 4.
 - **Number bonds.** The whole-and-two-parts diagram from Singapore Math — and
@@ -89,10 +91,17 @@ Other pedagogy baked in:
   world. No words — just the thing and the numeral.
 - **The symbol, twice.** Once as a block of colour big enough to fill the panel
   — a new colour each time round, so the numeral is the thing that stays the
-  same while everything about how it looks changes. And once on a **ruled pad**,
-  one solid numeral to copy and two hollow ones to trace, the way a handwriting
-  page lays it out. Knowing a number means knowing the shape your hand makes,
-  which is why Montessori hands children sandpaper numerals.
+  same while everything about how it looks changes.
+- **And then you write it.** On a real handwriting guide — solid line top and
+  bottom, dashed line down the middle — the numeral draws itself *in stroke
+  order*, with a numbered dot showing where each stroke begins. A three makes
+  its top belly, pauses, then its bottom one. Then it wipes itself off and hands
+  over the pen: **drag the dot round the shape and the ink follows your finger**,
+  stroke by stroke, and it turns green when you finish. Wander off the line and
+  it simply waits for you to come back. Every numeral 0–10 has its own written
+  stroke path — a font knows what a three *looks* like but not how it's *made*,
+  and the making is the part a hand has to learn. It's why Montessori gives
+  children sandpaper numerals to trace.
 - **Take-away made visible.** In `9 − 4`, the nine is drawn as 5 kept plus
   4 faded and dashed out.
 - **Equal groups.** `3 × 4` is three groups of four, never a flat pile.
@@ -175,6 +184,7 @@ index.html          # app shell
 styles.css          # all styling, animations, and the bright/calm themes
 src/
   config.js         # LEVELS, emoji themes, palettes  ← tweak content here
+  strokes.js        # how each numeral is *written* — the stroke paths a hand makes
   arrange.js        # the grouping engine: how a number splits into groups (pure logic)
   materials.js      # choosing what to count with
   state.js          # central state + localStorage persistence

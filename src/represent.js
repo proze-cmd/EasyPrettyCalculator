@@ -16,6 +16,7 @@ import {
   BEAD_COLORS,
   RESULT_COLOR,
   MAX_DRAWN,
+  NUMBER_EMBLEMS,
 } from './config.js';
 import { groupsFor, pipCells, waysToMake } from './arrange.js';
 import { state } from './state.js';
@@ -789,9 +790,9 @@ function applyDensity(el, total, groups = 1, size = 'big') {
     if (weight > 50) vars = { item: 'clamp(10px, 2.8vw, 15px)', gap: '2px', pad: '3px', group: '5px' };
     else if (weight > 20) vars = { item: 'clamp(12px, 3.4vw, 18px)', gap: '3px', pad: '4px', group: '6px' };
     else if (weight > 10) vars = { item: 'clamp(13px, 3.8vw, 20px)', gap: '3px', pad: '4px', group: '7px' };
-  } else if (weight > 50) vars = { item: 'clamp(13px, 3.9vw, 20px)', gap: '3px', pad: '4px', group: '6px' };
-  else if (weight > 20) vars = { item: 'clamp(16px, 4.8vw, 26px)', gap: '4px', pad: '5px', group: '8px' };
-  else if (weight > 10) vars = { item: 'clamp(20px, 5.8vw, 30px)', gap: '5px', pad: '6px', group: '10px' };
+  } else if (weight > 50) vars = { item: 'clamp(13px, min(3.9vw, 3.6vh), 34px)', gap: '3px', pad: '4px', group: '6px' };
+  else if (weight > 20) vars = { item: 'clamp(16px, min(4.8vw, 4.4vh), 44px)', gap: '4px', pad: '5px', group: '8px' };
+  else if (weight > 10) vars = { item: 'clamp(20px, min(5.8vw, 5.4vh), 56px)', gap: '5px', pad: '6px', group: '10px' };
   if (!vars) return;
   el.style.setProperty('--item', vars.item);
   el.style.setProperty('--gap', vars.gap);
@@ -804,4 +805,45 @@ function note(text) {
   n.className = 'overflow-note';
   n.textContent = text;
   return n;
+}
+
+
+// ---------------------------------------------------------------------------
+// Meeting the number in the world
+// ---------------------------------------------------------------------------
+
+/**
+ * Waldorf introduces a number by its quality before its quantity: one sun, two
+ * eyes, five fingers. The emblem is the whole lesson, so it is drawn big and
+ * alone with its numeral, and there is nothing on the screen to read.
+ */
+export function renderEmblem(n, size) {
+  const emblem = NUMBER_EMBLEMS[n];
+  const wrap = shell('rep--emblem', size);
+  if (!emblem) return wrap;
+
+  const art = document.createElement('div');
+  art.className = 'emblem__art';
+  emblem.emoji.forEach((glyph, i) => {
+    const span = document.createElement('span');
+    span.className = 'emblem__glyph pop-in';
+    span.textContent = glyph;
+    span.style.animationDelay = i * 140 + 'ms';
+    art.appendChild(span);
+  });
+  wrap.appendChild(art);
+
+  const num = document.createElement('div');
+  num.className = 'emblem__num';
+  num.textContent = String(n);
+  wrap.appendChild(num);
+
+  wrap.setAttribute('role', 'img');
+  wrap.setAttribute('aria-label', `${n}: ${emblem.name}`);
+  return wrap;
+}
+
+/** What this number is, in words — for narration only. */
+export function emblemName(n) {
+  return NUMBER_EMBLEMS[n] ? NUMBER_EMBLEMS[n].name : null;
 }

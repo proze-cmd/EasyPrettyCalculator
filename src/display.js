@@ -10,7 +10,7 @@
 // child just typed — and taps down into what those symbols mean.
 
 import { state, currentLevel, persist } from './state.js';
-import { OBJECT_THEMES, MAX_DRAWN, MIN_TOUCH } from './config.js';
+import { OBJECT_THEMES, MAX_DRAWN, MIN_TOUCH, NUMBER_EMBLEMS } from './config.js';
 import {
   renderQuantity,
   renderNumeral,
@@ -22,6 +22,8 @@ import {
   renderCompare,
   partColors,
   resultColor,
+  renderEmblem,
+  emblemName,
 } from './represent.js';
 import { renderBond } from './bond.js';
 import {
@@ -187,6 +189,14 @@ function calcParts() {
  */
 function bondNumbers() {
   const { c, a, b, result } = calcParts();
+  // Mid-mystery the bond is the best thing on the screen: the whole is known,
+  // one part is known, and the gap between them is the answer — drawn hollow
+  // so it can be counted. That is the child finding out rather than being told.
+  if (c.phase === 'guess' && a !== null && result !== null) {
+    if (c.op === '+') return { whole: result, partA: a, partB: null };
+    if (c.op === '−') return { whole: a, partA: result, partB: null };
+    return null;
+  }
   if (result === null || a === null || b === null) return null;
   let parts = null;
   if (c.op === '+') parts = { whole: result, partA: a, partB: b };
@@ -258,6 +268,11 @@ function viewCycle() {
     // One alternative split — enough to show a total can be seen more than one
     // way, without turning it into a slideshow.
     if (drawable && decompositionCount(n) > 1) views.push({ mode: 'objects', decomp: 1 });
+    // Where the number lives outside of maths — one sun, five fingers. Third,
+    // not last: Waldorf meets a number's character early, and a four-year-old
+    // who taps twice has to be able to reach it. But not before the split,
+    // which is the thing this app is actually for. Level 1 only.
+    if (level.emblems && NUMBER_EMBLEMS[n]) views.push({ mode: 'emblem' });
     // Pairing up belongs on the level where counting is pairing.
     if (drawable && level.pairs) views.push({ mode: 'pairs' });
     views.push({ mode: 'rods' });
@@ -269,8 +284,19 @@ function viewCycle() {
 
   // Same reasoning: once the numbers are too big to draw as separate things,
   // "objects" quietly becomes a ten-frame, so it stops being its own view.
-  const { a, b, result } = calcParts();
+  const { c, a, b, result } = calcParts();
   const biggest = Math.max(a || 0, b || 0, result || 0);
+
+  // Mid-mystery only three things are worth looking at: the question, the two
+  // known amounts as things, and the bond that shows the gap. Make-a-ten and
+  // the rest all assume a finished sum, and several would simply answer it.
+  if (c.phase === 'whole' || c.phase === 'guess') {
+    const mystery = [{ mode: 'numeral' }];
+    if (biggest <= MAX_DRAWN) mystery.push({ mode: 'objects' });
+    if (bondNumbers()) mystery.push({ mode: 'bond' });
+    return mystery;
+  }
+
   const views = [{ mode: 'numeral' }];
   if (biggest <= MAX_DRAWN) views.push({ mode: 'objects' });
   if (makeTenNumbers()) views.push({ mode: 'maketen' });
@@ -335,6 +361,11 @@ function narrateView() {
     const n = state.countValue;
     if (view.mode === 'pairs') {
       say(n % 2 ? `${n} makes pairs with one left over. ${n} is odd.` : `${n} pairs up exactly. ${n} is even.`);
+      return;
+    }
+    if (view.mode === 'emblem') {
+      const name = emblemName(n);
+      say(name ? `${n}. Like ${name}.` : String(n));
       return;
     }
     if (view.mode === 'objects' || view.mode === 'rods') {
@@ -507,6 +538,11 @@ function renderCountMode() {
     return;
   }
 
+  if (view.mode === 'emblem') {
+    displayEl.appendChild(renderEmblem(n, 'big'));
+    return;
+  }
+
   if (view.mode === 'paired') {
     // Numeral and quantity side by side: "this symbol means this many".
     const wrap = document.createElement('div');
@@ -630,18 +666,33 @@ function renderCalcMode() {
   );
 
   if (c.op) {
-    // Row 2 — the operator and the second number.
-    const showB = c.b === '' && c.phase === 'b' ? null : b;
+    // Row 2 — the operator and the second number. In a mystery this is the
+    // thing being hunted for, and stays a question mark until a guess is typed.
+    const hunting = c.unknown === 'b';
+    const showB = c.b === '' && (c.phase === 'b' || hunting) ? null : b;
     table.appendChild(
-      row(c.op, showB, view, { uniformColor: colorB, plates: c.op === '÷' })
+      row(c.op, showB, view, {
+        uniformColor: colorB,
+        plates: c.op === '÷',
+        mystery: hunting && c.b === '',
+      })
     );
 
     const line = document.createElement('div');
     line.className = 'equation__line';
     table.appendChild(line);
 
-    // Row 3 — the answer, with the parts still visible inside the whole.
-    table.appendChild(row('=', result, view, resultOptions(c, a, b, result), true));
+    // Row 3 — the answer, with the parts still visible inside the whole. While
+    // a mystery's total is being typed it is the total that goes here, and an
+    // empty slot rather than a second question mark: only one thing is unknown.
+    if (c.phase === 'whole') {
+      const typed = c.total === '' ? null : Number(c.total);
+      table.appendChild(
+        row('=', typed, view, { uniformColor: colorA, awaiting: typed === null }, true)
+      );
+    } else {
+      table.appendChild(row('=', result, view, resultOptions(c, a, b, result), true));
+    }
   }
 
   displayEl.appendChild(table);
@@ -720,7 +771,18 @@ function row(sign, value, view, opts = {}, isResult = false) {
   const valEl = document.createElement('div');
   valEl.className = 'equation__val';
 
-  if (value === null || value === undefined) {
+  if (opts.mystery) {
+    // The thing to be found. A box rather than a gap, so it reads as a
+    // question being asked rather than as something not typed yet.
+    const q = document.createElement('span');
+    q.className = 'equation__mystery';
+    q.textContent = '?';
+    valEl.appendChild(q);
+  } else if (opts.awaiting) {
+    const slot = document.createElement('span');
+    slot.className = 'equation__awaiting';
+    valEl.appendChild(slot);
+  } else if (value === null || value === undefined) {
     const blank = document.createElement('span');
     blank.className = 'equation__blank';
     blank.textContent = isResult ? '?' : '';

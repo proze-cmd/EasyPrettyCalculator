@@ -13,15 +13,16 @@ import { partColors, resultColor } from './represent.js';
 import { rowsFor, pipCells } from './arrange.js';
 
 /**
- * The most dots a bond circle can hold and still be read. A circle is a poor
- * container for a grid: past ten the rows no longer fit inside the curve and
- * the quantity turns into a smudge, so the numeral is the honest picture.
+ * How small a dot may get before the circle stops being a quantity and becomes
+ * a smudge, as a share of the space inside the circle.
  *
- * Ten is also where the bond belongs. Number bonds are the to-ten structure;
- * once an addition crosses ten, make-a-ten and regrouping are the views that
- * actually explain it, and both are already offered.
+ * This is a floor on the *result* rather than a cap on the number, because the
+ * number alone does not predict it: thirteen lands as four tidy rows and reads
+ * well, while eighteen splits into six rows of three and collapses. Whatever
+ * the arrangement works out to, a circle draws its dots when they can be seen
+ * and shows its numeral when they cannot.
  */
-const BOND_MAX_DOTS = 10;
+const MIN_DOT = 15;
 
 const GAP = 6; // percent, between dots and between rows
 
@@ -35,6 +36,21 @@ const GAP = 6; // percent, between dots and between rows
  * Rows come from the same grouping engine as the rest of the app, so the rule
  * that nothing is ever more than five in a row holds here too.
  */
+function bondLayout(segments) {
+  const rows = [];
+  segments.forEach((seg) => {
+    // Each part keeps its own shape inside the whole; it is the colour that
+    // says which part a dot belongs to, so the split can stay square.
+    rowsFor(seg.n).forEach((count) => rows.push({ count, color: seg.color, hollow: seg.hollow }));
+  });
+  // Dots are sized by whichever way round the circle runs out first, so a tall
+  // stack shrinks just as a wide row does and neither escapes the curve.
+  const cols = Math.max(...rows.map((r) => r.count));
+  const byWidth = (100 - (cols - 1) * GAP) / cols;
+  const byHeight = (100 - (rows.length - 1) * GAP) / rows.length;
+  return { rows, size: Math.min(byWidth, byHeight) };
+}
+
 function bondDots(segments) {
   const wrap = document.createElement('div');
   wrap.className = 'bond__dots';
@@ -44,19 +60,8 @@ function bondDots(segments) {
   const single = segments.length === 1 ? pipCells(segments[0].n) : null;
   if (single) return pipGrid(wrap, single, segments[0].color);
 
-  const rows = [];
-  segments.forEach((seg) => {
-    // Each part keeps its own shape inside the whole; it is the colour that
-    // says which part a dot belongs to, so the split can stay square.
-    rowsFor(seg.n).forEach((count) => rows.push({ count, color: seg.color }));
-  });
-
-  // Dots are sized by whichever way round the circle runs out first, so a tall
-  // stack shrinks just as a wide row does and neither escapes the curve.
-  const cols = Math.max(...rows.map((r) => r.count));
-  const byWidth = (100 - (cols - 1) * GAP) / cols;
-  const byHeight = (100 - (rows.length - 1) * GAP) / rows.length;
-  wrap.style.setProperty('--bdot', `${Math.min(byWidth, byHeight)}%`);
+  const { rows, size } = bondLayout(segments);
+  wrap.style.setProperty('--bdot', `${size}%`);
   wrap.style.setProperty('--bgap', `${GAP}%`);
 
   let drawn = 0;
@@ -64,17 +69,28 @@ function bondDots(segments) {
     const line = document.createElement('div');
     line.className = 'bond__row';
     for (let i = 0; i < row.count; i++) {
-      line.appendChild(makeDot(row.color, drawn++));
+      line.appendChild(makeDot(row.color, drawn++, row.hollow));
     }
     wrap.appendChild(line);
   });
   return wrap;
 }
 
-function makeDot(color, index) {
+/** Would these dots still be readable, or should the circle show its numeral? */
+function dotsWouldRead(segments) {
+  const total = segments.reduce((n, seg) => n + seg.n, 0);
+  if (total <= 0) return false;
+  if (segments.length === 1 && pipCells(segments[0].n)) return true;
+  return bondLayout(segments).size >= MIN_DOT;
+}
+
+function makeDot(color, index, hollow) {
   const dot = document.createElement('span');
-  dot.className = 'bond__dot pop-in';
-  dot.style.background = color;
+  dot.className = 'bond__dot pop-in' + (hollow ? ' bond__dot--hollow' : '');
+  // An empty place borrows its ring from `color`, so the outline and the solid
+  // dots beside it are plainly the same kind of thing.
+  if (hollow) dot.style.color = color;
+  else dot.style.background = color;
   dot.style.animationDelay = Math.min(index * 45, 500) + 'ms';
   return dot;
 }
@@ -105,8 +121,9 @@ function bondCircle(value, color, extraClass, segments) {
   const circle = document.createElement('div');
   circle.className = 'bond__circle';
   circle.style.borderColor = color;
-  if (value <= BOND_MAX_DOTS) {
-    circle.appendChild(bondDots(segments || [{ n: value, color }]));
+  const parts = segments || [{ n: value, color }];
+  if (dotsWouldRead(parts)) {
+    circle.appendChild(bondDots(parts));
   } else {
     // Past the draw limit a circle full of dots is a smudge, not a quantity.
     const big = document.createElement('span');
@@ -130,9 +147,17 @@ function bondCircle(value, color, extraClass, segments) {
 /**
  * @param {number} whole  the total
  * @param {number} partA  first part
- * @param {number} partB  second part
+ * @param {number|null} partB  second part, or null when it is the mystery
+ *
+ * With `partB` null the second circle holds a question mark, and the whole
+ * shows the known part solid with the rest of it drawn as empty outlines. The
+ * answer is therefore sitting on the screen waiting to be counted — which is
+ * exactly what a Montessori material does: it lets the child check themselves
+ * instead of an adult marking them right or wrong.
  */
 export function renderBond(whole, partA, partB) {
+  const unknown = partB === null || partB === undefined;
+  if (unknown) partB = Math.max(0, whole - partA);
   const palette = partColors();
   const wholeColor = resultColor();
   const colorA = palette[0].solid;
@@ -141,7 +166,10 @@ export function renderBond(whole, partA, partB) {
   const wrap = document.createElement('div');
   wrap.className = 'bond';
   wrap.setAttribute('role', 'img');
-  wrap.setAttribute('aria-label', `${whole} is made of ${partA} and ${partB}`);
+  wrap.setAttribute(
+    'aria-label',
+    unknown ? `${whole} is made of ${partA} and how many more?` : `${whole} is made of ${partA} and ${partB}`
+  );
 
   const top = document.createElement('div');
   top.className = 'bond__top';
@@ -150,7 +178,7 @@ export function renderBond(whole, partA, partB) {
   top.appendChild(
     bondCircle(whole, wholeColor, 'bond__cell--whole', [
       { n: partA, color: colorA },
-      { n: partB, color: colorB },
+      { n: partB, color: colorB, hollow: unknown },
     ])
   );
   wrap.appendChild(top);
@@ -178,8 +206,32 @@ export function renderBond(whole, partA, partB) {
   const bottom = document.createElement('div');
   bottom.className = 'bond__bottom';
   bottom.appendChild(bondCircle(partA, colorA));
-  bottom.appendChild(bondCircle(partB, colorB));
+  bottom.appendChild(unknown ? mysteryCircle(colorB) : bondCircle(partB, colorB));
   wrap.appendChild(bottom);
 
   return wrap;
+}
+
+/** The circle whose contents are the question. */
+function mysteryCircle(color) {
+  const cell = document.createElement('div');
+  cell.className = 'bond__cell bond__cell--mystery';
+
+  const circle = document.createElement('div');
+  circle.className = 'bond__circle';
+  circle.style.borderColor = color;
+
+  const q = document.createElement('span');
+  q.className = 'bond__big';
+  q.textContent = '?';
+  q.style.color = color;
+  circle.appendChild(q);
+  cell.appendChild(circle);
+
+  const num = document.createElement('div');
+  num.className = 'bond__num';
+  num.textContent = '?';
+  num.style.color = color;
+  cell.appendChild(num);
+  return cell;
 }

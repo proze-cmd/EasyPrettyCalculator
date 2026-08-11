@@ -64,6 +64,20 @@ Other pedagogy baked in:
   the circles hold the actual things, not just numerals. The nine on top is
   drawn as the same pink five and the same blue four sitting in the circles
   below it, so the parts are visible inside the whole rather than asserted.
+  A circle draws its dots whenever they can still be read and shows its numeral
+  when they can't — decided from how the dots actually land, not from a rule
+  about how big the number is.
+- **The mystery number.** Press **?** and the sum turns around: instead of
+  `5 + 4 = ?` you get **`5 + ? = 9`**, and the child has to find the part. This
+  is the one place in the app where the answer comes from them. A wrong guess
+  isn't marked wrong — it's told what it actually makes ("5 plus 3 makes 8"),
+  and the bond shows the nine as five solid dots and **four empty places**, so
+  the answer is sitting there waiting to be counted. That's control of error the
+  way the materials do it: the child checks themselves.
+- **Meeting the number.** One sun, two eyes, three corners, five fingers, seven
+  colours in a rainbow. Waldorf introduces a number by its character before its
+  quantity, so on *Count to 10* one tap shows where that number lives in the
+  world. No words — just the thing and the numeral.
 - **Take-away made visible.** In `9 − 4`, the nine is drawn as 5 kept plus
   4 faded and dashed out.
 - **Equal groups.** `3 × 4` is three groups of four, never a flat pile.

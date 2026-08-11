@@ -49,7 +49,16 @@ export function freshCalc() {
     op: null, // '+', '−', '×'
     b: '', // second operand, as typed
     result: null, // number once '=' is pressed
-    phase: 'a', // 'a' | 'b' | 'done'
+    // 'a' | 'b' | 'done', plus two more once a mystery is asked for:
+    // 'whole'  — the total is being typed, the second part is hidden
+    // 'guess'  — the total is known and the child is hunting for the part
+    phase: 'a',
+    // Set to 'b' when the child pressed "?" — the second part is the mystery.
+    unknown: null,
+    total: '', // the total, as typed, while a mystery is being set up
+    // How many tries so far, so the app can offer more help rather than
+    // repeating itself.
+    tries: 0,
   };
 }
 

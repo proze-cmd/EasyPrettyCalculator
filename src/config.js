@@ -22,6 +22,10 @@ export const LEVELS = [
     keys: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
     ops: [],
     maxValue: 10,
+    // Meeting the number as a thing in the world belongs here, where the
+    // numbers one to ten are the whole subject. The skip-counting levels run
+    // past ten immediately, and there is no sun with twenty in it.
+    emblems: true,
   },
   {
     id: 2,
@@ -60,6 +64,11 @@ export const LEVELS = [
     mode: 'calc',
     ops: ['+'],
     maxValue: 10,
+    // The mystery key. Once a child can add, the question worth asking is the
+    // other way round: you have five, you need nine, what is missing? That is
+    // the number bond made into a question, and the road to subtraction and
+    // to algebra. It belongs with adding and taking away, not with groups.
+    mystery: true,
   },
   {
     id: 6,
@@ -68,6 +77,7 @@ export const LEVELS = [
     mode: 'calc',
     ops: ['+', '−'],
     maxValue: 10,
+    mystery: true,
   },
   {
     id: 7,
@@ -76,6 +86,7 @@ export const LEVELS = [
     mode: 'calc',
     ops: ['+', '−'],
     maxValue: 20,
+    mystery: true,
   },
   {
     id: 8,
@@ -84,6 +95,7 @@ export const LEVELS = [
     mode: 'calc',
     ops: ['+', '−'],
     maxValue: 100,
+    mystery: true,
   },
   {
     id: 9,
@@ -219,3 +231,27 @@ export const MAX_DRAWN = 20;
  * at — so counting by touch switches itself off and the hint says so.
  */
 export const MIN_TOUCH = 15;
+
+/**
+ * Where you meet each number in the world.
+ *
+ * Waldorf introduces a number by its *quality* before its quantity: one sun,
+ * two eyes, three corners on a triangle, five fingers on a hand. The number
+ * arrives as something a child already knows rather than as a symbol to learn,
+ * and the picture is the lesson — there is nothing here to read.
+ *
+ * Nine has no single emblem of its own, so it gets the one Waldorf actually
+ * uses: three threes, which is also how this app already draws it.
+ */
+export const NUMBER_EMBLEMS = {
+  1: { emoji: ['☀️'], name: 'one sun' },
+  2: { emoji: ['👀'], name: 'two eyes' },
+  3: { emoji: ['🔺'], name: 'three corners' },
+  4: { emoji: ['🍀'], name: 'four leaves' },
+  5: { emoji: ['🖐️'], name: 'five fingers' },
+  6: { emoji: ['❄️'], name: 'six points on a snowflake' },
+  7: { emoji: ['🌈'], name: 'seven colours in a rainbow' },
+  8: { emoji: ['🐙'], name: 'eight arms' },
+  9: { emoji: ['🔺', '🔺', '🔺'], name: 'three threes' },
+  10: { emoji: ['🙌'], name: 'ten fingers' },
+};

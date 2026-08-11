@@ -270,11 +270,14 @@ body.has-interacted .tap-hint {
   justify-content: center;
 }
 .rep--big {
-  --item: clamp(24px, 8vw, 42px);
+  /* min() so the second dimension gets a vote: on a tablet there is room to
+     grow, in a short landscape panel there is not, and one expression covers
+     both without a media query fighting the inline sizes set from JS. */
+  --item: clamp(24px, min(8vw, 7.5vh), 76px);
   --gap: 6px;
 }
 .rep--pair {
-  --item: clamp(19px, 5.6vw, 30px);
+  --item: clamp(19px, min(5.6vw, 5vh), 52px);
   --gap: 5px;
 }
 .rep--small {
@@ -918,6 +921,50 @@ body.theme-calm .pairs__verdict--odd {
 .bond__dots--pips .bond__dot {
   width: 100%;
 }
+/* The part still to be found: drawn as empty places inside the whole, so the
+   answer is there to be counted rather than told. */
+/* A solid ring rather than a dashed one: at the size these land on a phone a
+   dashed border breaks into arcs and stops reading as a circle at all. The
+   faint fill keeps each empty place countable against the white panel. */
+.bond__dot--hollow {
+  background: none;
+  border: 2px solid currentColor;
+  opacity: 0.55;
+}
+.bond__cell--mystery .bond__circle {
+  border-style: dashed;
+}
+
+/* --- Meeting the number ------------------------------------------------
+   One sun, two eyes, five fingers. The picture is the whole lesson, so it is
+   large and alone, with the numeral underneath where it can be read off.
+   ------------------------------------------------------------------------ */
+
+.rep--emblem {
+  flex-direction: column;
+  gap: 6px;
+}
+.emblem__art {
+  display: flex;
+  gap: clamp(4px, 2vw, 14px);
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  max-width: 100%;
+}
+.emblem__glyph {
+  font-size: clamp(56px, min(26vw, 24vh), 190px);
+  line-height: 1.05;
+}
+.emblem__num {
+  font-weight: 800;
+  font-size: clamp(38px, min(11vw, 10vh), 84px);
+  color: var(--ink);
+  line-height: 1;
+}
+body.theme-calm .emblem__num {
+  color: #5a4a3f;
+}
 .bond__blank {
   display: block;
 }
@@ -1012,6 +1059,30 @@ body.theme-calm .bond__link {
   color: var(--ink-soft);
   font-size: clamp(34px, 9vw, 58px);
   font-weight: 800;
+}
+/* The thing to be found — a box holding a question, not an empty gap. */
+.equation__mystery {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: clamp(46px, 13vw, 74px);
+  padding: 2px 10px;
+  border: 3px dashed #8b6fe0;
+  border-radius: 16px;
+  background: rgba(177, 151, 252, 0.12);
+  color: #6741d9;
+  font-size: clamp(30px, 8vw, 50px);
+  font-weight: 800;
+  line-height: 1.15;
+}
+/* Where the total is being typed: a place for a number, holding no claim. */
+.equation__awaiting {
+  display: inline-block;
+  width: clamp(46px, 13vw, 74px);
+  border-bottom: 5px solid var(--ink-soft);
+  border-radius: 3px;
+  height: clamp(34px, 9vw, 58px);
+  opacity: 0.45;
 }
 .equation__line {
   grid-column: 1 / -1;
@@ -1114,6 +1185,9 @@ body.theme-calm .bond__link {
 .btn-equals { background: linear-gradient(180deg,#b2f2bb,#69db7c); box-shadow:0 6px 0 #40b862; color:#1f5a2e; }
 .btn-clear  { background: linear-gradient(180deg,#ffd6d6,#ffa8a8); box-shadow:0 6px 0 #e56a6a; color:#7a2a2a; }
 .btn-back   { background: linear-gradient(180deg,#e9ecf5,#cdd3e6); box-shadow:0 6px 0 #a7b0cc; color:#4a4a6a; }
+/* The mystery key. Its own colour, because it does not combine two numbers —
+   it turns the sum into a question and hands it back to the child. */
+.btn-mystery { background: linear-gradient(180deg,#e5dbff,#b197fc); box-shadow:0 6px 0 #8b6fe0; color:#3b2a6b; font-size:clamp(26px,8vw,40px); }
 
 /* --- FX layer (sparkles + confetti) ------------------------------------ */
 
@@ -1484,6 +1558,8 @@ body.theme-calm .btn-blue   { background: linear-gradient(180deg,#d6e2e8,#b6cbd6
 body.theme-calm .btn-purple { background: linear-gradient(180deg,#e2dae6,#c8bcd2); box-shadow:0 6px 0 #9d8fac; color:#4e4159; }
 body.theme-calm .btn-digit  { background: linear-gradient(180deg,#fffdf8,#f0eade); box-shadow:0 6px 0 #cfc4b0; color:#5a4a3f; }
 body.theme-calm .btn-op     { background: linear-gradient(180deg,#f2e2c8,#e2c49b); box-shadow:0 6px 0 #c09a6e; color:#6b5334; }
+body.theme-calm .btn-mystery { background: linear-gradient(180deg,#e6dfec,#c9bcd8); box-shadow:0 6px 0 #a191b5; color:#4f4160; }
+body.theme-calm .equation__mystery { border-color:#a191b5; background: rgba(161,145,181,0.12); color:#5c4d70; }
 body.theme-calm .btn-equals { background: linear-gradient(180deg,#cfe0c4,#a9c79b); box-shadow:0 6px 0 #7f9f71; color:#3c5434; }
 body.theme-calm .btn-clear  { background: linear-gradient(180deg,#eed6d0,#dcb2a8); box-shadow:0 6px 0 #bb8b80; color:#6b403a; }
 body.theme-calm .btn-back   { background: linear-gradient(180deg,#eae5db,#d3ccbf); box-shadow:0 6px 0 #aca493; color:#5a5245; }

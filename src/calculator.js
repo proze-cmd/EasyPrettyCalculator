@@ -32,7 +32,12 @@ export function initKeypad() {
 function maxAllowed() {
   const level = currentLevel();
   const c = state.calc;
-  if (c.phase !== 'b' || !c.op) return level.maxValue;
+  // Typing the total of a mystery is bounded only by the level. How big the
+  // missing part may be is the same question as how big a second operand may
+  // be, so a guess is bounded exactly as 'b' would be — which is the level's
+  // rule, already in force, and gives nothing away.
+  if (c.phase === 'whole') return level.maxValue;
+  if ((c.phase !== 'b' && c.phase !== 'guess') || !c.op) return level.maxValue;
 
   const a = Number(c.a || 0);
   switch (c.op) {
@@ -58,7 +63,7 @@ function candidate(current, digit) {
 function digitBlocked(digit) {
   const c = state.calc;
   if (c.phase === 'done') return false; // a new problem is about to start
-  const current = c.phase === 'a' ? c.a : c.b;
+  const current = c.phase === 'a' ? c.a : c.phase === 'whole' ? c.total : c.b;
   const value = candidate(current, digit);
   if (value > maxAllowed()) return true;
 
@@ -140,12 +145,44 @@ function buildCalcKeypad(level) {
     b.addEventListener('click', () => pressOp(op, b));
     ops.appendChild(b);
   });
+  if (level.mystery) {
+    const q = makeButton('?', 'btn-mystery');
+    q.setAttribute('aria-label', 'Mystery number');
+    q.addEventListener('click', () => pressMystery(q));
+    ops.appendChild(q);
+  }
   const eq = makeButton('=', 'btn-equals');
   eq.classList.add('btn--equals');
   eq.setAttribute('aria-label', 'Equals');
   eq.addEventListener('click', () => pressEquals(eq));
   ops.appendChild(eq);
   keypadEl.appendChild(ops);
+}
+
+/**
+ * "?" hides the second part and asks for the total instead, turning 5 + 4 = 9
+ * into 5 + ? = 9. The child then has to find the part rather than be told it —
+ * which is the number bond asked as a question, and the one place in the app
+ * where the answer comes from them instead of from us.
+ */
+function pressMystery(btn) {
+  unlockAudio();
+  markInteracted();
+  const c = state.calc;
+  if (c.phase !== 'b' || !c.op || c.a === '') {
+    refuseSoftly(btn, 'Pick a number and a sign first');
+    return;
+  }
+  c.b = '';
+  c.unknown = 'b';
+  c.phase = 'whole';
+  c.tries = 0;
+  resetView();
+  renderDisplay(false);
+  if (btn) pressFeedback(btn);
+  playTap();
+  say(c.op === '−' ? `${c.a} take away what, to leave how many?` : `${c.a} and what makes how many?`);
+  refreshKeys();
 }
 
 function makeButton(label, colorClass) {
@@ -219,13 +256,14 @@ function pressDigit(d, btn) {
   const cc = state.calc;
 
   if (cc.phase === 'a') cc.a = normalizeEntry(cc.a + String(d));
-  else if (cc.phase === 'b') cc.b = normalizeEntry(cc.b + String(d));
+  else if (cc.phase === 'whole') cc.total = normalizeEntry(cc.total + String(d));
+  else cc.b = normalizeEntry(cc.b + String(d));
 
   resetView();
   renderDisplay(true);
   if (btn) pressFeedback(btn);
   playPop();
-  say(cc.phase === 'a' ? cc.a : cc.b);
+  say(cc.phase === 'a' ? cc.a : cc.phase === 'whole' ? cc.total : cc.b);
   refreshKeys();
 }
 
@@ -318,6 +356,10 @@ function pressEquals(btn) {
   unlockAudio();
   markInteracted();
   const c = state.calc;
+
+  if (c.phase === 'whole') return commitWhole(btn);
+  if (c.phase === 'guess') return checkGuess(btn);
+
   if (c.phase !== 'b' || c.a === '' || c.b === '' || !c.op) {
     // Not enough to solve yet — a gentle nudge.
     if (btn) pressFeedback(btn);
@@ -337,6 +379,95 @@ function pressEquals(btn) {
   confetti(44);
   sparkle(displayEl, 12);
   say(equationPhrase(Number(c.a), c.op, Number(c.b), c.result));
+  refreshKeys();
+}
+
+/**
+ * The total of a mystery is now settled, so the hunt begins.
+ *
+ * A total the sum can't reach is refused here rather than by dimming keys:
+ * while "12" is being typed it passes through "1", and dimming everything
+ * below the first number would make a perfectly good total impossible to type.
+ */
+function commitWhole(btn) {
+  const c = state.calc;
+  if (c.total === '') {
+    if (btn) pressFeedback(btn);
+    playTap();
+    return;
+  }
+  const a = Number(c.a);
+  const total = Number(c.total);
+  if (c.op === '+' && total < a) {
+    refuseSoftly(btn, `We already have ${a}, so the total has to be bigger`);
+    return;
+  }
+  if (c.op === '−' && total > a) {
+    refuseSoftly(btn, `We only have ${a}, so what is left has to be smaller`);
+    return;
+  }
+  c.result = total;
+  c.phase = 'guess';
+  c.tries = 0;
+  resetView();
+  renderDisplay(true);
+  if (btn) pressFeedback(btn);
+  playTap();
+  say(
+    c.op === '−'
+      ? `${a} take away what, leaves ${total}?`
+      : `${a} and what makes ${total}?`
+  );
+  refreshKeys();
+}
+
+/**
+ * Control of error, the way the materials do it: the child tries, and the app
+ * says what their answer actually makes rather than simply "no". Getting it
+ * wrong is how you find out, so a wrong guess is answered with the truth about
+ * itself and the picture stays there to be counted.
+ */
+function checkGuess(btn) {
+  const c = state.calc;
+  if (c.b === '') {
+    if (btn) pressFeedback(btn);
+    playTap();
+    return;
+  }
+  const a = Number(c.a);
+  const guess = Number(c.b);
+  const makes = compute(a, c.op, guess);
+
+  if (makes === c.result) {
+    c.phase = 'done';
+    c.unknown = null;
+    resetView();
+    renderDisplay(true);
+    if (btn) pressFeedback(btn);
+    const resultEl = displayEl.querySelector('.equation__row--result');
+    if (resultEl) pop(resultEl);
+    playWin();
+    confetti(44);
+    sparkle(displayEl, 12);
+    saySequence(['Yes!', equationPhrase(a, c.op, guess, c.result)]);
+    refreshKeys();
+    return;
+  }
+
+  c.tries += 1;
+  const tried = c.b;
+  c.b = '';
+  renderDisplay(false);
+  if (btn) pressFeedback(btn);
+  playClear();
+  // First a plain statement of what they made. If it keeps not working, point
+  // at the picture rather than saying the same sentence louder.
+  const truth = `${a} ${opWord(c.op)} ${tried} makes ${makes}`;
+  if (c.tries >= 2) {
+    saySequence([truth, `We want ${c.result}. Tap the picture and count the empty ones.`]);
+  } else {
+    saySequence([truth, `We want ${c.result}. Try again!`]);
+  }
   refreshKeys();
 }
 
@@ -382,6 +513,17 @@ function backspace(btn) {
     // Undo the answer, back to editing the second number.
     c.result = null;
     c.phase = 'b';
+  } else if (c.phase === 'guess') {
+    // Back out of a guess, and then out of the mystery itself.
+    if (c.b !== '') c.b = c.b.slice(0, -1);
+    else c.phase = 'whole';
+  } else if (c.phase === 'whole') {
+    if (c.total !== '') {
+      c.total = c.total.slice(0, -1);
+    } else {
+      c.unknown = null;
+      c.phase = 'b';
+    }
   } else if (c.phase === 'b') {
     if (c.b !== '') {
       c.b = c.b.slice(0, -1);

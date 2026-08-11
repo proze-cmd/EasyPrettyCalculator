@@ -108,8 +108,11 @@ Do this on **390×844** first, then repeat the shaded rows on 320×568,
 
 ### Level 1 — Count to 10
 - Press **9** → numeral **9** paired with **5 + 4** in dice patterns (I1).
-- Expect **4 views**: paired → one other split (3+3+3) → rods → ten-frame.
-  *Not* three different splits.
+- Expect **5 views**: paired → one other split (3+3+3) → **emblem** → rods →
+  ten-frame. *Not* three different splits. This is the only counting level with
+  five; the emblem sits third so two taps reach it, but never ahead of the split.
+- **Emblem**: press 5 → a hand and a `5`, no words. 1 → a sun. 9 → three
+  triangles ("three threes"). Nothing on the skip-counting levels.
 - Touch each puppy: rings green, shrinks, counts aloud, celebrates at 9 (I9).
 - Miss an object inside a group → picture must **not** change, count survives.
 - Press **1** → no "ways to make 1" (there are none).
@@ -129,6 +132,20 @@ Do this on **390×844** first, then repeat the shaded rows on 320×568,
   "Tap to see it another way", not "Touch each one".
 
 ### Level 5 — Adding to 10
+- **The mystery.** `5` `+` `?` → the second row becomes a dashed `?` box and the
+  answer row becomes an empty slot (**not** a second `?` — only one thing is
+  unknown). Type `9` `=` → reads `5 + ? = 9`.
+  - Guess `3` `=` → wobble, and it says **"5 plus 3 makes 8. We want 9."** It
+    must never just say "wrong", and 8 must not become the answer.
+  - Two wrong guesses in a row → it points at the picture instead of repeating.
+  - Tap through → the bond shows **5 solid dots and 4 empty rings** inside the
+    nine, and a dashed circle holding `?`. The answer is countable on screen.
+    That is deliberate: the material is what tells them, not us.
+  - Guess `4` `=` → "Yes!", confetti, the sum completes.
+  - Only three views mid-mystery (question, objects, bond). Make-a-ten and the
+    rest assume a finished sum and several would simply answer it.
+- `5 + ? = 3` must be refused — the total can't be smaller than what we have.
+- No `?` key on **Fair Shares** (levels 9 and 10 have × and ÷).
 - `5 + 4 =` → stacked equation, `=` under the line, answer green.
 - Objects view: pink 5 above blue 4; the answer is that **same** pink 5 beside
   that **same** blue 4 (principle 6).
@@ -205,6 +222,8 @@ how many *words* and how many *shapes* are on screen?
 | Pairs | 1 | everything paired, or one left in a dashed ring |
 | Fair shares | 0 | things, empty plates, then plates with things on |
 | Ways to make | 1 | the staircase |
+| Mystery bond | 0 | solid dots, empty rings, and a `?` |
+| Meeting a number | 0 | the sun, the hand, the rainbow |
 
 **If a screen's word count creeps up, it has stopped explaining and started
 telling.** A pre-reader must be able to get it with the sound off.
@@ -231,6 +250,10 @@ telling.** A pre-reader must be able to get it with the sound off.
   number, not a style choice.
 - Rods show the **whole** number, never split into parts — that's their job, and
   the grouped views already cover splitting.
+- **A bond falls back to a numeral by measurement, not by size of number.**
+  Thirteen lands as four tidy rows and draws; eighteen splits into six rows of
+  three, collapses to 7px, and shows `18` instead. Don't replace that with a
+  count-based cap — the count doesn't predict the layout.
 - **Rods and bar models are lines on purpose.** I1 is about quantities you count
   one by one. A Montessori rod, a golden ten-bar and a Singapore comparison bar
   all mean *length*, and breaking them into groups of five would destroy the one
